@@ -139,6 +139,28 @@
       .stats { grid-template-columns: repeat(6, minmax(0, 1fr)); }
       .nav-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     }
+    .progress { height: 8px; border-radius: 999px; background: #e2e8f0; overflow: hidden; margin-top: 8px; max-width: 320px; }
+    .progress > i { display: block; height: 100%; background: var(--teal); border-radius: 999px; }
+    .progress.done > i { background: var(--success); }
+    .pill.NotStarted { background: #f1f5f9; color: #475569; }
+    .pill.InProgress, .pill.Melting { background: #dbeafe; color: #1d4ed8; }
+    .pill.MoldsReady, .pill.Poured { background: #dcfce7; color: var(--success); }
+    .pill.ReadyforPouring { background: #ccfbf1; color: var(--teal-2); }
+    .pill.Hold { background: #fee4e2; color: var(--danger); }
+    .metric-strip { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 6px; font-size: 13px; color: var(--muted); }
+    .metric-strip b { color: var(--navy); }
+    .lines { display: grid; gap: 8px; }
+    .line { display: grid; grid-template-columns: 1fr 100px auto; gap: 8px; align-items: center; }
+    .line select, .line input { width: 100%; border: 1px solid var(--line); border-radius: 10px; min-height: 42px; padding: 8px 10px; background: white; }
+    .line .unit { font-size: 12px; color: var(--muted); font-weight: 800; min-width: 34px; }
+    .line-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .line-head label { margin: 0 !important; }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .hist { border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 6px; }
+    .hist-top { display: flex; justify-content: space-between; gap: 8px; align-items: center; flex-wrap: wrap; font-weight: 900; color: var(--navy); }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip { font-size: 12px; background: #f1f5f9; color: #334155; border-radius: 8px; padding: 4px 8px; font-weight: 700; }
+    .section-label { font-size: 13px; font-weight: 900; color: var(--navy); margin: 14px 0 8px; text-transform: uppercase; letter-spacing: .02em; }
   </style>
 </head>
 <body>
@@ -164,6 +186,8 @@
         <section id="raw" class="screen"></section>
         <section id="consumables" class="screen"></section>
         <section id="orders" class="screen"></section>
+        <section id="molding" class="screen"></section>
+        <section id="melting" class="screen"></section>
       </main>
     </div>
   </div>
@@ -187,13 +211,16 @@
       ['products', 'Product', 'Product Master'],
       ['raw', 'Raw', 'Raw Material'],
       ['consumables', 'Consumables', 'Consumables'],
-      ['orders', 'Orders', 'Orders']
+      ['orders', 'Orders', 'Orders'],
+      ['molding', 'Molding', 'Molding'],
+      ['melting', 'Melting', 'Melting & Pouring']
     ];
+    const bottomNavIds = ['dashboard', 'orders', 'molding', 'melting'];
     const rawCategories = ['Scrap Input', 'FE Alloy & Metal Input'];
     const consumableCategories = ['Melting & Pouring Consumable', 'Molding & Molding Consumable'];
     const units = ['KG', 'Ton', 'Gram', 'Litre', 'Pcs', 'Box'];
     const orderStatuses = ['Pending', 'In Production', 'Completed', 'Delivered', 'Cancelled'];
-    const state = { page: 'dashboard', history: [], loading: true, products: [], raw_materials: [], consumables: [], orders: [], search: {}, filter: { orderStatus: 'All' }, selectedRawCategory: null, selectedConsumableCategory: null };
+    const state = { page: 'dashboard', history: [], loading: true, products: [], raw_materials: [], consumables: [], orders: [], search: {}, filter: { orderStatus: 'All', molding: 'All', melting: 'Ready to Pour' }, molding_jobs: [], molding_entries: [], molding_usage: [], melting_batches: [], melting_usage: [], productionReady: false, productionError: '', selectedRawCategory: null, selectedConsumableCategory: null };
 
     function request(path, options = {}) {
       return fetch(`${API}/${path}`, { ...options, headers: { ...headers, ...(options.headers || {}) } })
@@ -215,6 +242,18 @@
           request('orders?select=*&order=created_at.desc')
         ]);
         Object.assign(state, { products, raw_materials: raw, consumables, orders });
+        try {
+          const [jobs, entries, mUsage, batches, bUsage] = await Promise.all([
+            request('molding_jobs?select=*&order=created_at.desc'),
+            request('molding_entries?select=*&order=entry_date.desc'),
+            request('molding_consumable_usage?select=*'),
+            request('melting_batches?select=*&order=created_at.desc'),
+            request('melting_material_usage?select=*')
+          ]);
+          Object.assign(state, { molding_jobs: jobs, molding_entries: entries, molding_usage: mUsage, melting_batches: batches, melting_usage: bUsage, productionReady: true, productionError: '' });
+        } catch (prodError) {
+          Object.assign(state, { productionReady: false, productionError: prodError.message });
+        }
         document.getElementById('connectionState').textContent = 'Live Supabase data';
         render();
       } catch (error) {
@@ -256,7 +295,7 @@
     function renderNav() {
       const navHtml = navItems.map(([id, short, label]) => `<button class="${state.page === id ? 'active' : ''}" onclick="navigate('${id}')">${label}</button>`).join('');
       document.getElementById('sideNav').innerHTML = navHtml;
-      document.getElementById('bottomNav').innerHTML = navItems.slice(0, 4).map(([id, short]) => `<button class="${state.page === id ? 'active' : ''}" onclick="navigate('${id}')"><strong>${short[0]}</strong><span>${short}</span></button>`).join('');
+      document.getElementById('bottomNav').innerHTML = navItems.filter(([id]) => bottomNavIds.includes(id)).map(([id, short]) => `<button class="${state.page === id ? 'active' : ''}" onclick="navigate('${id}')"><strong>${short[0]}</strong><span>${short}</span></button>`).join('');
     }
 
     function header(title, subtitle, action = '') {
@@ -270,6 +309,8 @@
       renderRaw();
       renderConsumables();
       renderOrders();
+      renderMolding();
+      renderMelting();
     }
 
     function renderError(message) {
@@ -296,6 +337,8 @@
           ${navTile('raw', 'RM', 'Raw Material Master', 'Scrap and FE alloy inputs')}
           ${navTile('consumables', 'CM', 'Consumables Master', 'Melting, pouring and molding')}
           ${navTile('orders', 'OM', 'Order Management', 'Place and track orders')}
+          ${navTile('molding', 'MD', 'Molding', `${state.orders.filter(o => ACTIVE_ORDER(o) && (jobFor(o.id)?.status || 'Not Started') !== 'Molds Ready').length} orders waiting for molds`)}
+          ${navTile('melting', 'ML', 'Melting & Pouring', `${state.orders.reduce((s, o) => s + (ACTIVE_ORDER(o) ? availableMolds(o.id) : 0), 0)} molds ready to pour`)}
          </div>
          <div class="panel"><h3>Recent Orders</h3><div class="list">${recent}</div></div>`;
     }
@@ -555,7 +598,386 @@
     }
     function showOrderDetail(id) {
       const o = state.orders.find(x => x.id === id);
-      details('Order Details', [['Product', thumb(o.product_image_url, o.model_name)], ['Order ID', esc(o.order_id)], ['Model Name', esc(o.model_name)], ['Model ID', esc(o.model_id)], ['Customer', esc(o.customer_name)], ['Mobile', esc(o.customer_mobile || '-')], ['Quantity', esc(o.quantity)], ['Order Date', moneyDate(o.order_date)], ['Delivery Date', moneyDate(o.delivery_date)], ['Status', esc(o.status)], ['Remarks', esc(o.remarks || '-')]], `<button class="btn primary" onclick="openOrderForm('${id}')">Edit Order</button><button class="btn secondary" onclick="openStatusForm('${id}')">Update Status</button><button class="btn danger" onclick="save('orders','${id}',{status:'Cancelled'},'Order cancelled')">Cancel Order</button>`);
+      details('Order Details', [['Product', thumb(o.product_image_url, o.model_name)], ['Order ID', esc(o.order_id)], ['Model Name', esc(o.model_name)], ['Model ID', esc(o.model_id)], ['Customer', esc(o.customer_name)], ['Mobile', esc(o.customer_mobile || '-')], ['Quantity', esc(o.quantity)], ['Order Date', moneyDate(o.order_date)], ['Delivery Date', moneyDate(o.delivery_date)], ['Status', esc(o.status)], ['Molds Made', state.productionReady ? `${num(jobFor(o.id)?.molds_made)} / ${num(jobFor(o.id)?.molds_required ?? o.quantity)}` : '-'], ['Molds Poured', state.productionReady ? String(pouredFor(o.id)) : '-'], ['Remarks', esc(o.remarks || '-')]], `<button class="btn primary" onclick="openOrderForm('${id}')">Edit Order</button><button class="btn secondary" onclick="openStatusForm('${id}')">Update Status</button><button class="btn danger" onclick="save('orders','${id}',{status:'Cancelled'},'Order cancelled')">Cancel Order</button>`);
+    }
+
+
+    /* =================== PRODUCTION: MOLDING + MELTING =================== */
+    const ACTIVE_ORDER = o => !['Cancelled', 'Delivered'].includes(o.status);
+    const HEAT_FLOW = ['Pending', 'Melting', 'Ready for Pouring', 'Poured'];
+    const num = v => Number(v || 0);
+    const fmt = v => { const n = num(v); return Number.isInteger(n) ? String(n) : n.toFixed(3).replace(/0+$/, '').replace(/\.$/, ''); };
+    function jobFor(orderId) { return state.molding_jobs.find(j => j.order_uuid === orderId); }
+    function batchesFor(orderId) { return state.melting_batches.filter(b => b.order_uuid === orderId); }
+    function pouredFor(orderId) { return batchesFor(orderId).reduce((s, b) => s + num(b.molds_poured), 0); }
+    function availableMolds(orderId) { return Math.max(num(jobFor(orderId)?.molds_made) - pouredFor(orderId), 0); }
+    function orderById(id) { return state.orders.find(o => o.id === id); }
+    function progress(done, total) {
+      const pct = total > 0 ? Math.min(100, Math.round(done / total * 100)) : 0;
+      return `<div class="progress ${pct >= 100 ? 'done' : ''}"><i style="width:${pct}%"></i></div>`;
+    }
+    function tabs(key, list, rerender) {
+      return `<div class="tabs">${list.map(t => `<button class="tab ${state.filter[key] === t ? 'active' : ''}" onclick="state.filter.${key}='${t}'; ${rerender}()">${t}</button>`).join('')}</div>`;
+    }
+    function productionMissing(target) {
+      document.getElementById(target).innerHTML = header(target === 'molding' ? 'Molding' : 'Melting & Pouring', 'Production tables not found') +
+        `<div class="notice">Run <b>supabase_molding_melting_v2.sql</b> in the Supabase SQL Editor, then press Refresh.<br><small>${esc(state.productionError || '')}</small></div>`;
+    }
+
+    /* ---------- material line pickers (used by both forms) ---------- */
+    function lineOptions(kind) {
+      const opt = (id, name, unit, type, cat, code) => `<option value="${id}" data-name="${esc(name)}" data-unit="${esc(unit)}" data-type="${type}" data-cat="${esc(cat)}">${esc(name)}${code ? ` (${esc(code)})` : ''}</option>`;
+      if (kind === 'raw') {
+        return rawCategories.map(cat => `<optgroup label="${esc(cat)}">${state.raw_materials.filter(r => r.category === cat && r.status === 'Active').map(r => opt(r.id, r.material_name, r.unit_of_measurement, 'Raw Material', cat, r.material_code)).join('')}</optgroup>`).join('');
+      }
+      const cat = kind === 'mold' ? 'Molding & Molding Consumable' : 'Melting & Pouring Consumable';
+      return state.consumables.filter(c => c.category === cat && c.status === 'Active').map(c => opt(c.id, c.consumable_name, c.unit_of_measurement, 'Consumable', cat, c.consumable_code)).join('');
+    }
+    function addLine(containerId, kind, preset = {}) {
+      const box = document.getElementById(containerId);
+      if (!box) return;
+      const row = document.createElement('div');
+      row.className = 'line';
+      row.innerHTML = `<select onchange="lineUnit(this)"><option value="">Select ${kind === 'raw' ? 'raw material' : 'consumable'}</option>${lineOptions(kind)}</select>
+        <input type="number" step="0.001" min="0" placeholder="Qty" value="${preset.qty != null ? esc(preset.qty) : ''}">
+        <button type="button" class="btn small danger" onclick="this.parentNode.remove()" title="Remove line">X</button>`;
+      box.appendChild(row);
+      if (preset.id) { row.querySelector('select').value = preset.id; lineUnit(row.querySelector('select')); }
+    }
+    function lineUnit(select) {
+      const unit = select.selectedOptions[0]?.dataset.unit;
+      select.parentNode.querySelector('input').placeholder = unit ? `Qty (${unit})` : 'Qty';
+    }
+    function collectLines(containerId) {
+      const out = [];
+      for (const row of document.querySelectorAll(`#${containerId} .line`)) {
+        const sel = row.querySelector('select');
+        const qty = num(row.querySelector('input').value);
+        if (!sel.value && !qty) continue;
+        if (!sel.value || qty <= 0) { toast('Every material line needs an item and a quantity above 0', true); return null; }
+        const o = sel.selectedOptions[0].dataset;
+        out.push({ id: sel.value, name: o.name, unit: o.unit, type: o.type, cat: o.cat, qty });
+      }
+      return out;
+    }
+    function lineBlock(id, label, kind, btnText) {
+      return `<div class="field full"><div class="line-head"><label>${label}</label><button type="button" class="btn small secondary" onclick="addLine('${id}','${kind}')">${btnText}</button></div><div class="lines" id="${id}"></div></div>`;
+    }
+    function usageChips(items) {
+      return items.length ? `<div class="chips">${items.map(u => `<span class="chip">${esc(u.name)}: ${fmt(u.qty)} ${esc(u.unit || '')}</span>`).join('')}</div>` : `<span class="hint">No material recorded</span>`;
+    }
+    function totalsByItem(items) {
+      const map = {};
+      items.forEach(u => { const k = `${u.name}|${u.unit}`; map[k] = map[k] || { name: u.name, unit: u.unit, qty: 0 }; map[k].qty += num(u.qty); });
+      return Object.values(map);
+    }
+
+    /* ============================ MOLDING ============================ */
+    function moldingStatus(o) { return jobFor(o.id)?.status || 'Not Started'; }
+
+    function renderMolding() {
+      if (!state.productionReady) return productionMissing('molding');
+      const q = (state.search.molding || '').toLowerCase();
+      const tab = state.filter.molding;
+      const active = state.orders.filter(ACTIVE_ORDER);
+      const rows = active.filter(o => (tab === 'All' || moldingStatus(o) === tab) && `${o.order_id} ${o.model_name} ${o.model_id} ${o.customer_name}`.toLowerCase().includes(q));
+      const required = active.reduce((s, o) => s + num(jobFor(o.id)?.molds_required ?? o.quantity), 0);
+      const made = active.reduce((s, o) => s + num(jobFor(o.id)?.molds_made), 0);
+      const today_ = state.molding_entries.filter(e => e.entry_date === today()).reduce((s, e) => s + num(e.molds_made), 0);
+      const stats = [['Open Orders', active.filter(o => moldingStatus(o) !== 'Molds Ready').length], ['Molds Required', required], ['Molds Made', made], ['Molds Pending', Math.max(required - made, 0)], ['Made Today', today_], ['On Hold', active.filter(o => moldingStatus(o) === 'Hold').length]]
+        .map(([l, v]) => `<div class="card stat"><span>${l}</span><strong>${v}</strong></div>`).join('');
+      document.getElementById('molding').innerHTML =
+        header('Molding', 'All orders - make molds and record molding consumables') +
+        `<div class="grid stats">${stats}</div><div style="height:14px"></div>
+        <div class="toolbar"><input class="search" placeholder="Search order, model or customer" value="${esc(state.search.molding || '')}" oninput="state.search.molding=this.value; renderMolding()"></div>
+        ${tabs('molding', ['All', 'Not Started', 'In Progress', 'Molds Ready', 'Hold'], 'renderMolding')}
+        <div class="list">${rows.map(moldingRow).join('') || `<div class="empty">No orders in this view.</div>`}</div>`;
+    }
+
+    function moldingRow(o) {
+      const job = jobFor(o.id);
+      const req = num(job?.molds_required ?? o.quantity);
+      const made = num(job?.molds_made);
+      const st = moldingStatus(o);
+      return `<div class="row" onclick="${job ? `showMoldingHistory('${o.id}')` : `openMoldingEntry('${o.id}')`}">${thumb(o.product_image_url, o.model_name)}
+        <div class="row-main"><div class="row-title">${esc(o.order_id)} <span class="pill ${statusClass(st)}">${esc(st)}</span></div>
+          <div class="row-meta">${esc(o.model_name)} · ${esc(o.model_id)} · ${esc(o.customer_name)}<br>Order qty ${esc(o.quantity)} · Delivery ${moneyDate(o.delivery_date)}</div>
+          <div class="metric-strip"><span>Required <b>${req}</b></span><span>Made <b>${made}</b></span><span>Pending <b>${Math.max(req - made, 0)}</b></span></div>
+          ${progress(made, req)}</div>
+        <div class="actions" onclick="event.stopPropagation()">
+          ${st === 'Hold' ? '' : `<button class="btn small primary" onclick="openMoldingEntry('${o.id}')">Add Molds</button>`}
+          ${job ? `<button class="btn small ghost" onclick="showMoldingHistory('${o.id}')">History</button><button class="btn small ${st === 'Hold' ? 'secondary' : 'danger'}" onclick="toggleMoldingHold('${o.id}')">${st === 'Hold' ? 'Resume' : 'Hold'}</button>` : ''}
+        </div></div>`;
+    }
+
+    function openMoldingEntry(orderId) {
+      const o = orderById(orderId);
+      const job = jobFor(orderId);
+      const req = job?.molds_required ?? o.quantity;
+      const made = num(job?.molds_made);
+      modal(`Molding Entry · ${esc(o.order_id)}`, `<form class="form-grid" onsubmit="saveMoldingEntry(event,'${orderId}')">
+        <div class="field full"><div class="row" style="padding:10px">${thumb(o.product_image_url, o.model_name)}<div class="row-main"><div class="row-title">${esc(o.model_name)}</div><div class="row-meta">${esc(o.model_id)} · ${esc(o.customer_name)} · Order qty ${esc(o.quantity)}<br>Molds made so far: <b>${made}</b></div></div><span></span></div></div>
+        ${field('molds_required', 'Molds Required (total)', req, 'number', true)}
+        ${field('molds_made', 'Molds Made in this Entry', Math.max(num(req) - made, 1), 'number', true)}
+        ${field('entry_date', 'Work Date', today(), 'date', true)}
+        ${field('operator_name', 'Molding Person', job?.operator_name || '', 'text')}
+        ${lineBlock('lines_mold', 'Molding Consumables Used', 'mold', '+ Add consumable')}
+        ${field('remarks', 'Remarks', '', 'textarea')}
+        <div class="form-actions field full"><button class="btn primary" type="submit">Save Molding Entry</button><button class="btn ghost" type="button" onclick="closeModal()">Cancel</button></div></form>`);
+      addLine('lines_mold', 'mold');
+      if (!lineOptions('mold')) toast('No active Molding consumables in master. Add them in Consumables Master.', true);
+    }
+
+    async function saveMoldingEntry(event, orderId) {
+      event.preventDefault();
+      if (!validate(['molds_required', 'molds_made', 'entry_date'])) return;
+      const required = Math.floor(num(val('molds_required')));
+      const madeNow = Math.floor(num(val('molds_made')));
+      if (required <= 0 || madeNow <= 0) return toast('Molds must be more than 0', true);
+      const lines = collectLines('lines_mold');
+      if (!lines) return;
+      let job = jobFor(orderId);
+      if (num(job?.molds_made) + madeNow > required && !confirm(`Total molds (${num(job?.molds_made) + madeNow}) will be more than required (${required}). Save anyway?`)) return;
+      const rep = { Prefer: 'return=representation' };
+      try {
+        if (!job) {
+          [job] = await request('molding_jobs', { method: 'POST', headers: rep, body: JSON.stringify({ order_uuid: orderId, molds_required: required, operator_name: val('operator_name') || null }) });
+        } else if (num(job.molds_required) !== required || (val('operator_name') && val('operator_name') !== job.operator_name)) {
+          await request(`molding_jobs?id=eq.${job.id}`, { method: 'PATCH', body: JSON.stringify({ molds_required: required, operator_name: val('operator_name') || job.operator_name }) });
+        }
+        const [entry] = await request('molding_entries', { method: 'POST', headers: rep, body: JSON.stringify({ molding_job_id: job.id, order_uuid: orderId, entry_date: val('entry_date'), molds_made: madeNow, operator_name: val('operator_name') || null, remarks: val('remarks') || null }) });
+        if (lines.length) {
+          await request('molding_consumable_usage', { method: 'POST', body: JSON.stringify(lines.map(l => ({ molding_entry_id: entry.id, molding_job_id: job.id, consumable_id: l.id, consumable_name: l.name, unit_of_measurement: l.unit, qty: l.qty }))) });
+        }
+        closeModal();
+        await refreshAll();
+        toast(`${madeNow} molds recorded`);
+      } catch (error) { toast(error.message, true); }
+    }
+
+    function moldUsage(filterFn) {
+      return state.molding_usage.filter(filterFn).map(u => ({ name: u.consumable_name, unit: u.unit_of_measurement, qty: u.qty }));
+    }
+
+    function showMoldingHistory(orderId) {
+      const o = orderById(orderId);
+      const job = jobFor(orderId);
+      if (!job) return openMoldingEntry(orderId);
+      const entries = state.molding_entries.filter(e => e.molding_job_id === job.id).sort((a, b) => (b.entry_date + b.created_at).localeCompare(a.entry_date + a.created_at));
+      const totals = totalsByItem(moldUsage(u => u.molding_job_id === job.id));
+      modal(`Molding History · ${esc(o.order_id)}`, `
+        <div class="metric-strip"><span>Required <b>${job.molds_required}</b></span><span>Made <b>${job.molds_made}</b></span><span>Poured <b>${pouredFor(orderId)}</b></span><span>Status <b>${esc(job.status)}</b></span></div>
+        ${progress(job.molds_made, job.molds_required)}
+        <div class="section-label">Total consumables used</div>${usageChips(totals)}
+        <div class="section-label">Entries (${entries.length})</div>
+        <div class="list">${entries.map(e => `<div class="hist"><div class="hist-top"><span>${moneyDate(e.entry_date)} · ${e.molds_made} molds</span><button class="btn small danger" onclick="deleteMoldingEntry('${e.id}','${orderId}')">Delete</button></div>
+          <div class="row-meta">${esc(e.operator_name || 'Operator not set')}${e.remarks ? ` · ${esc(e.remarks)}` : ''}</div>
+          ${usageChips(moldUsage(u => u.molding_entry_id === e.id))}</div>`).join('') || `<div class="empty">No entries yet.</div>`}</div>
+        <div class="form-actions">${job.status === 'Hold' ? '' : `<button class="btn primary" onclick="openMoldingEntry('${orderId}')">Add Molds</button>`}<button class="btn ghost" onclick="closeModal()">Close</button></div>`);
+    }
+
+    async function deleteMoldingEntry(entryId, orderId) {
+      const e = state.molding_entries.find(x => x.id === entryId);
+      const job = jobFor(orderId);
+      if (num(job.molds_made) - num(e.molds_made) < pouredFor(orderId)) return toast('Cannot delete: these molds are already used in melting/pouring', true);
+      if (!confirm(`Delete this entry of ${e.molds_made} molds?`)) return;
+      try {
+        await request(`molding_entries?id=eq.${entryId}`, { method: 'DELETE' });
+        await refreshAll();
+        toast('Molding entry deleted');
+        showMoldingHistory(orderId);
+      } catch (error) { toast(error.message, true); }
+    }
+
+    async function toggleMoldingHold(orderId) {
+      const job = jobFor(orderId);
+      if (!job) return;
+      try {
+        await request(`molding_jobs?id=eq.${job.id}`, { method: 'PATCH', body: JSON.stringify({ status: job.status === 'Hold' ? 'In Progress' : 'Hold' }) });
+        await refreshAll();
+        toast(job.status === 'Hold' ? 'Molding resumed' : 'Molding put on hold');
+      } catch (error) { toast(error.message, true); }
+    }
+
+    /* ======================== MELTING & POURING ======================== */
+    function meltingView(o) {
+      const avail = availableMolds(o.id);
+      return avail > 0 ? 'Ready to Pour' : 'Fully Poured';
+    }
+
+    function renderMelting() {
+      if (!state.productionReady) return productionMissing('melting');
+      const q = (state.search.melting || '').toLowerCase();
+      const tab = state.filter.melting;
+      const withMolds = state.orders.filter(o => ACTIVE_ORDER(o) && num(jobFor(o.id)?.molds_made) > 0);
+      const rows = withMolds.filter(o => (tab === 'All' || meltingView(o) === tab) && `${o.order_id} ${o.model_name} ${o.model_id} ${o.customer_name}`.toLowerCase().includes(q));
+      const avail = withMolds.reduce((s, o) => s + availableMolds(o.id), 0);
+      const pouredKg = state.melting_batches.reduce((s, b) => s + num(b.pour_qty_kg), 0);
+      const meltKg = state.melting_batches.reduce((s, b) => s + num(b.melt_qty_kg), 0);
+      const running = state.melting_batches.filter(b => !['Poured', 'Hold'].includes(b.status)).length;
+      const stats = [['Orders with Molds', withMolds.length], ['Molds to Pour', avail], ['Active Heats', running], ['Total Heats', state.melting_batches.length], ['Melted (kg)', fmt(meltKg)], ['Poured (kg)', fmt(pouredKg)]]
+        .map(([l, v]) => `<div class="card stat"><span>${l}</span><strong>${v}</strong></div>`).join('');
+      const recent = [...state.melting_batches].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 8);
+      document.getElementById('melting').innerHTML =
+        header('Melting & Pouring', 'Orders with ready molds - melt raw material and pour') +
+        `<div class="grid stats">${stats}</div><div style="height:14px"></div>
+        <div class="toolbar"><input class="search" placeholder="Search order, model or customer" value="${esc(state.search.melting || '')}" oninput="state.search.melting=this.value; renderMelting()"></div>
+        ${tabs('melting', ['Ready to Pour', 'Fully Poured', 'All'], 'renderMelting')}
+        <div class="list">${rows.map(meltingRow).join('') || `<div class="empty">${withMolds.length ? 'No orders in this view.' : 'No molds made yet. Orders appear here once the Molding person records molds.'}</div>`}</div>
+        <div class="panel" style="margin-top:16px"><h3>Recent Heats</h3><div class="list">${recent.map(heatCard).join('') || `<div class="empty">No heats yet.</div>`}</div></div>`;
+    }
+
+    function meltingRow(o) {
+      const job = jobFor(o.id);
+      const made = num(job.molds_made);
+      const poured = pouredFor(o.id);
+      const avail = availableMolds(o.id);
+      const heats = batchesFor(o.id);
+      const allDone = avail === 0 && heats.length && heats.every(b => b.status === 'Poured') && made >= num(job.molds_required);
+      return `<div class="row" onclick="showHeats('${o.id}')">${thumb(o.product_image_url, o.model_name)}
+        <div class="row-main"><div class="row-title">${esc(o.order_id)} <span class="pill ${avail ? 'ReadyforPouring' : 'Poured'}">${avail ? `${avail} molds ready` : 'All molds poured'}</span> <span class="pill ${statusClass(job.status)}">Molding: ${esc(job.status)}</span></div>
+          <div class="row-meta">${esc(o.model_name)} · ${esc(o.model_id)} · ${esc(o.customer_name)}<br>Order qty ${esc(o.quantity)} · Delivery ${moneyDate(o.delivery_date)}</div>
+          <div class="metric-strip"><span>Molds made <b>${made}</b></span><span>Poured <b>${poured}</b></span><span>Available <b>${avail}</b></span><span>Heats <b>${heats.length}</b></span></div>
+          ${progress(poured, num(job.molds_required))}</div>
+        <div class="actions" onclick="event.stopPropagation()">
+          ${avail ? `<button class="btn small primary" onclick="openMeltingForm('${o.id}')">New Heat</button>` : ''}
+          <button class="btn small ghost" onclick="showHeats('${o.id}')">Heats</button>
+          ${allDone && o.status !== 'Completed' ? `<button class="btn small secondary" onclick="save('orders','${o.id}',{status:'Completed'},'Order marked Completed')">Mark Completed</button>` : ''}
+        </div></div>`;
+    }
+
+    function meltUsage(batchId) {
+      return state.melting_usage.filter(u => u.melting_batch_id === batchId).map(u => ({ id: u.item_id, type: u.item_type, name: u.item_name, unit: u.unit_of_measurement, qty: u.qty }));
+    }
+
+    function heatCard(b) {
+      const o = orderById(b.order_uuid) || {};
+      const usage = meltUsage(b.id);
+      const next = HEAT_FLOW[HEAT_FLOW.indexOf(b.status) + 1];
+      return `<div class="hist"><div class="hist-top"><span>${esc(b.heat_no)} · ${esc(o.order_id || '')} <span class="pill ${statusClass(b.status)}">${esc(b.status)}</span></span>
+          <span class="actions">${b.status === 'Hold' ? `<button class="btn small secondary" onclick="setHeatStatus('${b.id}','Melting')">Resume</button>` : next ? `<button class="btn small secondary" onclick="setHeatStatus('${b.id}','${next}')">Mark ${next}</button>` : ''}
+          <button class="btn small ghost" onclick="openMeltingForm('${b.order_uuid}','${b.id}')">Edit</button></span></div>
+        <div class="row-meta">${moneyDate(b.melting_date)} · Furnace ${esc(b.furnace_no || '-')} · ${esc(b.operator_name || 'Operator not set')}<br>Molds poured <b>${num(b.molds_poured)}</b> · Melt ${fmt(b.melt_qty_kg)} kg · Pour ${fmt(b.pour_qty_kg)} kg${num(b.melt_qty_kg) > 0 ? ` · Yield ${Math.round(num(b.pour_qty_kg) / num(b.melt_qty_kg) * 100)}%` : ''}</div>
+        <div class="row-meta"><b>Raw material</b></div>${usageChips(usage.filter(u => u.type === 'Raw Material'))}
+        <div class="row-meta"><b>Melting &amp; pouring consumables</b></div>${usageChips(usage.filter(u => u.type === 'Consumable'))}</div>`;
+    }
+
+    function showHeats(orderId) {
+      const o = orderById(orderId);
+      const job = jobFor(orderId);
+      const heats = batchesFor(orderId).sort((a, b) => b.created_at.localeCompare(a.created_at));
+      const all = heats.flatMap(b => meltUsage(b.id));
+      modal(`Heats · ${esc(o.order_id)}`, `
+        <div class="metric-strip"><span>Molds made <b>${num(job?.molds_made)}</b></span><span>Poured <b>${pouredFor(orderId)}</b></span><span>Available <b>${availableMolds(orderId)}</b></span></div>
+        <div class="section-label">Total raw material</div>${usageChips(totalsByItem(all.filter(u => u.type === 'Raw Material')))}
+        <div class="section-label">Total melting &amp; pouring consumables</div>${usageChips(totalsByItem(all.filter(u => u.type === 'Consumable')))}
+        <div class="section-label">Heats (${heats.length})</div>
+        <div class="list">${heats.map(heatCard).join('') || `<div class="empty">No heats yet.</div>`}</div>
+        <div class="form-actions">${availableMolds(orderId) ? `<button class="btn primary" onclick="openMeltingForm('${orderId}')">New Heat</button>` : ''}<button class="btn ghost" onclick="closeModal()">Close</button></div>`);
+    }
+
+    function openMeltingForm(orderId, batchId) {
+      const o = orderById(orderId);
+      const b = state.melting_batches.find(x => x.id === batchId) || { melting_date: today(), status: 'Melting' };
+      const maxMolds = availableMolds(orderId) + num(b.molds_poured);
+      modal(`${batchId ? 'Edit Heat ' + esc(b.heat_no) : 'New Heat'} · ${esc(o.order_id)}`, `<form class="form-grid" onsubmit="saveMelting(event,'${orderId}','${batchId || ''}')">
+        <div class="field full"><div class="row" style="padding:10px">${thumb(o.product_image_url, o.model_name)}<div class="row-main"><div class="row-title">${esc(o.model_name)}</div><div class="row-meta">${esc(o.model_id)} · ${esc(o.customer_name)}<br>Molds available to pour: <b>${maxMolds}</b></div></div><span></span></div></div>
+        <div class="field"><label>Heat No</label><input value="${esc(b.heat_no || 'Auto: HT-000001')}" disabled></div>
+        ${field('furnace_no', 'Furnace No', b.furnace_no, 'text')}
+        ${field('melting_date', 'Melting Date', b.melting_date, 'date', true)}
+        ${field('operator_name', 'Melting Person', b.operator_name, 'text')}
+        ${lineBlock('lines_raw', 'Raw Material Charged *', 'raw', '+ Add raw material')}
+        ${lineBlock('lines_meltcon', 'Melting & Pouring Consumables', 'meltcon', '+ Add consumable')}
+        <div class="field" data-field="melt_qty_kg"><label for="melt_qty_kg">Melt Qty (kg)</label><input id="melt_qty_kg" type="number" step="0.001" min="0" value="${esc(b.melt_qty_kg ?? '')}"><div class="hint"><a href="#" onclick="event.preventDefault(); fillMeltFromRaw()">Use total of KG raw material lines</a></div></div>
+        ${field('pour_qty_kg', 'Pour Qty (kg)', b.pour_qty_kg ?? '', 'number')}
+        <div class="field" data-field="molds_poured"><label for="molds_poured">Molds Poured in this Heat *</label><input id="molds_poured" type="number" min="0" max="${maxMolds}" value="${esc(batchId ? b.molds_poured : maxMolds)}"><div class="hint">Max ${maxMolds}</div><div class="error">Molds Poured is required</div></div>
+        ${selectField('status', 'Heat Status', b.status, ['Pending', 'Melting', 'Ready for Pouring', 'Poured', 'Hold'])}
+        ${field('remarks', 'Remarks', b.remarks, 'textarea')}
+        <div class="form-actions field full"><button class="btn primary" type="submit">${batchId ? 'Update Heat' : 'Save Heat'}</button>${batchId ? `<button class="btn danger" type="button" onclick="deleteHeat('${batchId}','${orderId}')">Delete Heat</button>` : ''}<button class="btn ghost" type="button" onclick="closeModal()">Cancel</button></div></form>`);
+      const usage = batchId ? meltUsage(batchId) : [];
+      const raw = usage.filter(u => u.type === 'Raw Material');
+      const con = usage.filter(u => u.type === 'Consumable');
+      (raw.length ? raw : [{}]).forEach(u => addLine('lines_raw', 'raw', u));
+      (con.length ? con : [{}]).forEach(u => addLine('lines_meltcon', 'meltcon', u));
+      const meltInput = document.getElementById('melt_qty_kg');
+      if (batchId) meltInput.dataset.touched = '1';
+      meltInput.addEventListener('input', () => { meltInput.dataset.touched = '1'; });
+      const rawBox = document.getElementById('lines_raw');
+      rawBox.addEventListener('input', autoMelt);
+      rawBox.addEventListener('change', autoMelt);
+    }
+
+    function rawKgTotal() {
+      let total = 0;
+      document.querySelectorAll('#lines_raw .line').forEach(row => {
+        const opt = row.querySelector('select').selectedOptions[0];
+        const unit = (opt?.dataset.unit || '').toUpperCase();
+        const q = num(row.querySelector('input').value);
+        if (unit === 'KG') total += q; else if (unit === 'TON') total += q * 1000; else if (unit === 'GRAM') total += q / 1000;
+      });
+      return total;
+    }
+    function fillMeltFromRaw() { document.getElementById('melt_qty_kg').value = fmt(rawKgTotal()); }
+    function autoMelt() { const m = document.getElementById('melt_qty_kg'); if (m && !m.dataset.touched) m.value = rawKgTotal() ? fmt(rawKgTotal()) : ''; }
+
+    async function saveMelting(event, orderId, batchId) {
+      event.preventDefault();
+      if (!validate(['melting_date', 'molds_poured'])) return;
+      const b = state.melting_batches.find(x => x.id === batchId);
+      const maxMolds = availableMolds(orderId) + num(b?.molds_poured);
+      const molds = Math.floor(num(val('molds_poured')));
+      const melt = num(val('melt_qty_kg'));
+      const pour = num(val('pour_qty_kg'));
+      if (molds > maxMolds) return toast(`Only ${maxMolds} molds are available`, true);
+      if (melt && pour > melt) return toast('Pour qty cannot be more than melt qty', true);
+      if (val('status') === 'Poured' && molds <= 0) return toast('Enter molds poured before marking Poured', true);
+      const raw = collectLines('lines_raw');
+      if (!raw) return;
+      const con = collectLines('lines_meltcon');
+      if (!con) return;
+      if (!raw.length) return toast('Add at least one raw material', true);
+      const payload = {
+        order_uuid: orderId, furnace_no: val('furnace_no') || null, melting_date: val('melting_date'), operator_name: val('operator_name') || null,
+        molds_poured: molds, melt_qty_kg: melt, pour_qty_kg: pour, status: val('status'), remarks: val('remarks') || null,
+        raw_material_id: raw[0].id, raw_material_name: raw.map(r => r.name).join(', '), raw_material_qty: raw.reduce((s, r) => s + r.qty, 0),
+        consumable_id: con[0]?.id || null, consumable_name: con.map(c => c.name).join(', ') || null, consumable_qty: con.reduce((s, c) => s + c.qty, 0)
+      };
+      try {
+        let id = batchId;
+        if (batchId) {
+          await request(`melting_batches?id=eq.${batchId}`, { method: 'PATCH', body: JSON.stringify(payload) });
+          await request(`melting_material_usage?melting_batch_id=eq.${batchId}`, { method: 'DELETE' });
+        } else {
+          const [created] = await request('melting_batches', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(payload) });
+          id = created.id;
+        }
+        const lines = [...raw, ...con].map(l => ({ melting_batch_id: id, item_type: l.type, item_id: l.id, item_name: l.name, item_category: l.cat, unit_of_measurement: l.unit, qty: l.qty }));
+        if (lines.length) await request('melting_material_usage', { method: 'POST', body: JSON.stringify(lines) });
+        closeModal();
+        await refreshAll();
+        toast(batchId ? 'Heat updated' : 'Heat saved');
+      } catch (error) { toast(error.message, true); }
+    }
+
+    async function setHeatStatus(id, status) {
+      const b = state.melting_batches.find(x => x.id === id);
+      if (status === 'Poured' && num(b.molds_poured) <= 0) return openMeltingForm(b.order_uuid, id);
+      try {
+        await request(`melting_batches?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+        await refreshAll();
+        toast(`Heat ${b.heat_no}: ${status}`);
+        if (document.getElementById('modal').classList.contains('open')) showHeats(b.order_uuid);
+      } catch (error) { toast(error.message, true); }
+    }
+
+    async function deleteHeat(id, orderId) {
+      if (!confirm('Delete this heat? Its molds will become available again.')) return;
+      try {
+        await request(`melting_batches?id=eq.${id}`, { method: 'DELETE' });
+        await refreshAll();
+        toast('Heat deleted');
+        showHeats(orderId);
+      } catch (error) { toast(error.message, true); }
     }
 
     renderNav();
