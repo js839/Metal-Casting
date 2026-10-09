@@ -1,0 +1,1351 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Metal Casting ERP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #0b1b33;
+      --navy-2: #13294b;
+      --navy-3: #1c3760;
+      --accent: #e8590c;
+      --accent-2: #c2410c;
+      --accent-soft: #fff1e8;
+      --ink: #0f172a;
+      --ink-2: #334155;
+      --muted: #64748b;
+      --line: #e3e8ef;
+      --line-2: #eef2f6;
+      --bg: #f3f5f9;
+      --panel: #ffffff;
+      --soft: #f8fafc;
+      --danger: #c0262d;
+      --danger-soft: #fdecec;
+      --warn: #b45309;
+      --warn-soft: #fff6e0;
+      --success: #15803d;
+      --success-soft: #e7f7ed;
+      --info: #1d4ed8;
+      --info-soft: #e8efff;
+      --teal: #0f766e;
+      --teal-soft: #e3f6f3;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, .06);
+      --shadow: 0 1px 3px rgba(15, 23, 42, .06), 0 8px 24px rgba(15, 23, 42, .06);
+      --shadow-lg: 0 24px 60px rgba(15, 23, 42, .22);
+      --side-w: 248px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+    }
+
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body { margin: 0; background: var(--bg); color: var(--ink); line-height: 1.45; -webkit-font-smoothing: antialiased; }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    button { border: 0; cursor: pointer; background: none; }
+    h1, h2, h3, p { margin: 0; }
+    a { color: var(--accent-2); }
+    .ic { width: 18px; height: 18px; flex: none; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .ic.sm { width: 15px; height: 15px; }
+    .ic.lg { width: 22px; height: 22px; }
+
+    /* ---------- Layout ---------- */
+    .app { min-height: 100vh; }
+    .side { display: none; }
+    .main { min-width: 0; padding-bottom: 88px; }
+    .topbar { position: sticky; top: 0; z-index: 12; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; background: rgba(255,255,255,.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+    .topbar .brand { color: var(--ink); }
+    .crumb { display: none; color: var(--muted); font-size: 13px; font-weight: 500; }
+    .crumb b { color: var(--ink); font-weight: 600; }
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+    .content { padding: 18px 16px 24px; max-width: 1440px; margin: 0 auto; }
+    .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .brandmark { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: linear-gradient(135deg, #f97316, #c2410c); color: white; flex: none; box-shadow: 0 6px 16px rgba(232,89,12,.35); }
+    .brand h1 { font-size: 15px; font-weight: 700; line-height: 1.15; letter-spacing: -.01em; }
+    .brand p { color: var(--muted); font-size: 12px; margin-top: 1px; }
+    .conn { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--muted); padding: 5px 10px; border-radius: 999px; background: var(--soft); border: 1px solid var(--line); white-space: nowrap; }
+    .conn::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #94a3b8; }
+    .conn.ok { color: var(--success); background: var(--success-soft); border-color: #c6ebd3; }
+    .conn.ok::before { background: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,.2); }
+    .conn.err { color: var(--danger); background: var(--danger-soft); border-color: #f5c9cb; }
+    .conn.err::before { background: var(--danger); }
+
+    .screen { display: none; animation: fade .18s ease; }
+    .screen.active { display: block; }
+    @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+    .page-title { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+    .page-title h2 { font-size: 22px; font-weight: 700; letter-spacing: -.02em; color: var(--ink); }
+    .page-title p { margin-top: 4px; color: var(--muted); font-size: 13.5px; }
+    .page-title .pt-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* ---------- Buttons ---------- */
+    .btn, .icon-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border-radius: var(--radius-sm); font-weight: 600; min-height: 38px; padding: 0 14px; white-space: nowrap; transition: background .15s, box-shadow .15s, color .15s, border-color .15s; border: 1px solid transparent; }
+    .icon-btn { width: 38px; padding: 0; color: var(--ink-2); background: white; border-color: var(--line); }
+    .icon-btn:hover { background: var(--soft); color: var(--ink); }
+    .btn.primary { background: var(--accent); color: white; box-shadow: 0 1px 2px rgba(194,65,12,.3), inset 0 1px 0 rgba(255,255,255,.15); }
+    .btn.primary:hover { background: var(--accent-2); }
+    .btn.secondary { background: var(--accent-soft); color: var(--accent-2); border-color: #fbd5bd; }
+    .btn.secondary:hover { background: #ffe4d1; }
+    .btn.ghost { background: white; color: var(--ink-2); border-color: var(--line); }
+    .btn.ghost:hover { background: var(--soft); color: var(--ink); }
+    .btn.danger { background: white; color: var(--danger); border-color: #f3c7c9; }
+    .btn.danger:hover { background: var(--danger-soft); }
+    .btn.success { background: var(--success-soft); color: var(--success); border-color: #c6ebd3; }
+    .btn.small { min-height: 30px; padding: 0 10px; font-size: 12.5px; border-radius: 7px; gap: 5px; }
+    .btn.icon-only { width: 30px; padding: 0; }
+    .btn:focus-visible, .icon-btn:focus-visible, .tab:focus-visible, .side-nav button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    /* ---------- Cards / KPIs ---------- */
+    .grid { display: grid; gap: 12px; }
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 18px; }
+    .card, .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+    .stat { padding: 14px 16px; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; position: relative; overflow: hidden; }
+    .stat span { color: var(--muted); font-size: 12px; font-weight: 600; display: block; }
+    .stat strong { display: block; margin-top: 6px; font-size: 26px; font-weight: 700; color: var(--ink); letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .stat-ic { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; flex: none; background: var(--soft); color: var(--ink-2); }
+    .tone-orange .stat-ic { background: var(--accent-soft); color: var(--accent-2); }
+    .tone-blue .stat-ic { background: var(--info-soft); color: var(--info); }
+    .tone-green .stat-ic { background: var(--success-soft); color: var(--success); }
+    .tone-amber .stat-ic { background: var(--warn-soft); color: var(--warn); }
+    .tone-teal .stat-ic { background: var(--teal-soft); color: var(--teal); }
+    .tone-red .stat-ic { background: var(--danger-soft); color: var(--danger); }
+
+    .nav-grid { grid-template-columns: 1fr; margin-bottom: 18px; }
+    .nav-card { text-align: left; padding: 14px 16px; display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 12px; background: white; border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-sm); transition: border-color .15s, box-shadow .15s, transform .15s; }
+    .nav-card:hover { border-color: #f6b892; box-shadow: var(--shadow); transform: translateY(-1px); }
+    .nav-card .go { color: #94a3b8; }
+    .nav-card:hover .go { color: var(--accent); }
+    .nav-icon, .avatar { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-2); flex: none; }
+    .nav-card h3 { font-size: 14.5px; font-weight: 600; }
+    .nav-card p { margin-top: 2px; color: var(--muted); font-size: 12.5px; }
+
+    .panel { padding: 0; margin-bottom: 18px; overflow: hidden; }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+    .panel-head h3 { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    .count { display: inline-flex; align-items: center; min-height: 22px; padding: 0 8px; border-radius: 999px; background: var(--line-2); color: var(--ink-2); font-size: 12px; font-weight: 600; }
+    .panel-body { padding: 16px; }
+
+    /* ---------- Toolbar / search ---------- */
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .search-box { position: relative; flex: 1 1 240px; min-width: 0; }
+    .search-box .ic { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; }
+    .search, .field input, .field select, .field textarea, .select { width: 100%; border: 1px solid var(--line); background: white; color: var(--ink); border-radius: var(--radius-sm); min-height: 38px; padding: 8px 12px; outline: 0; transition: border-color .15s, box-shadow .15s; }
+    .search-box .search { padding-left: 34px; }
+    .select { width: auto; min-width: 160px; padding-right: 30px; }
+    .field textarea { resize: vertical; min-height: 84px; }
+    .search:focus, .select:focus, .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,89,12,.14); }
+    .field input:disabled { background: var(--soft); color: var(--muted); }
+
+    /* ---------- Tabs ---------- */
+    .tabs { display: inline-flex; gap: 2px; overflow-x: auto; padding: 3px; background: var(--line-2); border-radius: 10px; max-width: 100%; }
+    .tab { white-space: nowrap; border-radius: 8px; min-height: 32px; padding: 0 12px; color: var(--muted); font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+    .tab:hover { color: var(--ink); }
+    .tab.active { color: var(--ink); background: white; box-shadow: var(--shadow-sm); }
+    .tab .count { min-height: 18px; padding: 0 6px; font-size: 11px; background: rgba(15,23,42,.06); }
+    .tab.active .count { background: var(--accent-soft); color: var(--accent-2); }
+
+    /* ---------- Data table ---------- */
+    .table-wrap { width: 100%; overflow-x: auto; }
+    table.dt { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13.5px; }
+    .dt thead th { position: sticky; top: 0; background: #f8fafc; color: var(--muted); font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    .dt tbody td { padding: 11px 14px; border-bottom: 1px solid var(--line-2); vertical-align: middle; color: var(--ink-2); }
+    .dt tbody tr:last-child td { border-bottom: 0; }
+    .dt tbody tr { transition: background .12s; }
+    .dt tbody tr.click { cursor: pointer; }
+    .dt tbody tr:hover td { background: #fbfcfe; }
+    .dt .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .dt .nowrap { white-space: nowrap; }
+    .dt .act { text-align: right; white-space: nowrap; width: 1%; }
+    .dt .strong { color: var(--ink); font-weight: 600; }
+    .dt .mono { white-space: nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; color: var(--ink); font-weight: 500; }
+    .dt .desc { color: var(--muted); max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dt .wide { min-width: 140px; }
+    .cell-prod { display: flex; align-items: center; gap: 10px; min-width: 180px; }
+    .cell-prod b { display: block; color: var(--ink); font-weight: 600; }
+    .cell-prod small { display: block; color: var(--muted); font-size: 12px; }
+    .sub { display: block; color: var(--muted); font-size: 12px; margin-top: 1px; }
+    .muted { color: var(--muted); }
+    .late { color: var(--danger); font-weight: 600; }
+    .actions { display: inline-flex; gap: 6px; flex-wrap: nowrap; justify-content: flex-end; }
+
+    .thumb { width: 40px; height: 40px; border-radius: 8px; background: linear-gradient(135deg, #e2e8f0, #f1f5f9); border: 1px solid var(--line); display: grid; place-items: center; color: var(--ink-2); font-weight: 700; font-size: 12px; overflow: hidden; flex: none; }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .thumb.lg { width: 64px; height: 64px; border-radius: 10px; font-size: 16px; }
+
+    /* ---------- Pills ---------- */
+    .pill { display: inline-flex; align-items: center; gap: 6px; min-height: 22px; padding: 0 9px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--line-2); color: var(--ink-2); white-space: nowrap; }
+    .pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .85; }
+    .pill.active, .pill.Completed, .pill.Delivered, .pill.MoldsReady, .pill.Poured { background: var(--success-soft); color: var(--success); }
+    .pill.Pending { background: var(--warn-soft); color: var(--warn); }
+    .pill.InProduction, .pill.InProgress, .pill.Melting { background: var(--info-soft); color: var(--info); }
+    .pill.Cancelled, .pill.inactive, .pill.Hold { background: var(--danger-soft); color: var(--danger); }
+    .pill.NotStarted { background: #f1f5f9; color: #475569; }
+    .pill.ReadyforPouring, .pill.ReadytoPour { background: var(--accent-soft); color: var(--accent-2); }
+
+    /* ---------- Progress ---------- */
+    .prog { display: flex; align-items: center; gap: 8px; min-width: 120px; }
+    .prog small { font-size: 12px; font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; min-width: 34px; text-align: right; }
+    .progress { flex: 1; height: 6px; border-radius: 999px; background: var(--line-2); overflow: hidden; }
+    .progress > i { display: block; height: 100%; background: linear-gradient(90deg, #fb923c, var(--accent)); border-radius: 999px; }
+    .progress.done > i { background: #22c55e; }
+
+    /* ---------- Category cards ---------- */
+    .category-grid { grid-template-columns: 1fr; }
+    .category-card { padding: 18px; text-align: left; display: grid; grid-template-columns: 48px 1fr auto; gap: 14px; align-items: center; background: white; border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-sm); transition: border-color .15s, box-shadow .15s, transform .15s; }
+    .category-card:hover { border-color: #f6b892; box-shadow: var(--shadow); transform: translateY(-1px); }
+    .category-card .nav-icon { width: 48px; height: 48px; }
+    .category-card strong { font-size: 15px; font-weight: 600; color: var(--ink); display: block; }
+    .category-card span.sub { margin-top: 3px; font-size: 13px; }
+    .category-card .big { font-size: 24px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+    /* ---------- Forms ---------- */
+    .form-grid { display: grid; gap: 14px; }
+    .field label { display: block; font-size: 12.5px; color: var(--ink-2); font-weight: 600; margin-bottom: 6px; }
+    .field label .req { color: var(--danger); }
+    .error { display: none; color: var(--danger); font-size: 12px; margin-top: 5px; font-weight: 500; }
+    .field.invalid .error { display: block; }
+    .field.invalid input, .field.invalid select, .field.invalid textarea { border-color: var(--danger); }
+    .form-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; margin-top: 4px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .upload-box { display: grid; gap: 12px; grid-template-columns: 88px 1fr; align-items: center; padding: 12px; border: 1px dashed #cbd5e1; border-radius: 10px; background: var(--soft); }
+    .preview { width: 88px; height: 88px; border-radius: 10px; display: grid; place-items: center; overflow: hidden; background: white; border: 1px solid var(--line); color: var(--muted); font-weight: 600; font-size: 12px; }
+    .preview img { width: 100%; height: 100%; object-fit: cover; }
+    .upload-box input[type=file] { font-size: 12.5px; max-width: 100%; }
+    .ctx { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 10px; background: var(--soft); border: 1px solid var(--line); }
+    .ctx b { display: block; color: var(--ink); }
+    .ctx small { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+
+    /* material lines */
+    .lines { display: grid; gap: 8px; }
+    .line { display: grid; grid-template-columns: 1fr 120px 30px; gap: 8px; align-items: center; }
+    .line select, .line input { width: 100%; border: 1px solid var(--line); border-radius: var(--radius-sm); min-height: 38px; padding: 7px 10px; background: white; outline: 0; }
+    .line select:focus, .line input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,89,12,.14); }
+    .line-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .line-head label { margin: 0 !important; }
+
+    /* ---------- Detail / history ---------- */
+    .detail { display: grid; grid-template-columns: 1fr; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+    .detail-kv { display: grid; grid-template-columns: 140px 1fr; gap: 12px; font-size: 13.5px; padding: 10px 14px; border-bottom: 1px solid var(--line-2); align-items: center; }
+    .detail-kv:nth-child(odd) { background: #fbfcfd; }
+    .detail-kv:last-child { border-bottom: 0; }
+    .detail-kv span { color: var(--muted); font-weight: 500; }
+    .detail-kv strong { color: var(--ink); font-weight: 600; }
+    .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-bottom: 12px; }
+    .summary div { background: var(--soft); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+    .summary span { display: block; font-size: 11.5px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+    .summary b { display: block; font-size: 18px; font-weight: 700; color: var(--ink); margin-top: 2px; font-variant-numeric: tabular-nums; }
+    .hist { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 8px; background: white; }
+    .hist-top { display: flex; justify-content: space-between; gap: 8px; align-items: center; flex-wrap: wrap; font-weight: 600; color: var(--ink); }
+    .row-meta { color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+    .row-meta b { color: var(--ink-2); }
+    .list { display: grid; gap: 10px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+    .chip { font-size: 12px; background: var(--line-2); color: var(--ink-2); border-radius: 6px; padding: 3px 8px; font-weight: 500; white-space: nowrap; }
+    .chip b { font-weight: 600; color: var(--ink); }
+    .section-label { font-size: 11.5px; font-weight: 700; color: var(--muted); margin: 16px 0 8px; text-transform: uppercase; letter-spacing: .05em; }
+    .modal .table-wrap { border: 1px solid var(--line); border-radius: 10px; }
+
+    /* ---------- States ---------- */
+    .empty, .loading, .notice { padding: 36px 18px; text-align: center; color: var(--muted); font-size: 13.5px; }
+    .empty .ic { width: 34px; height: 34px; display: block; margin: 0 auto 8px; color: #cbd5e1; }
+    .notice { background: var(--warn-soft); border: 1px solid #f6dfa8; color: #7c4a03; border-radius: var(--radius); text-align: left; padding: 16px; }
+    .skeleton { height: 14px; border-radius: 6px; background: linear-gradient(90deg, #eef2f6, #f8fafc, #eef2f6); background-size: 200% 100%; animation: shimmer 1.2s infinite; }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+    .hidden { display: none !important; }
+    .desktop-only { display: none; }
+
+    /* ---------- Toast / bottom nav / modal ---------- */
+    .toast { position: fixed; left: 14px; right: 14px; bottom: 84px; background: var(--navy); color: white; border-radius: 10px; padding: 12px 14px; font-weight: 500; box-shadow: var(--shadow-lg); transform: translateY(140px); opacity: 0; transition: .22s ease; z-index: 40; display: flex; align-items: center; gap: 10px; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; height: 66px; display: grid; grid-template-columns: repeat(5, 1fr); background: white; border-top: 1px solid var(--line); z-index: 15; padding-bottom: env(safe-area-inset-bottom); }
+    .bottom-nav button { color: var(--muted); display: grid; place-items: center; align-content: center; gap: 3px; font-size: 11px; font-weight: 600; }
+    .bottom-nav button.active { color: var(--accent-2); }
+    .modal { position: fixed; inset: 0; display: none; place-items: end center; background: rgba(11,27,51,.5); backdrop-filter: blur(2px); padding: 0; z-index: 30; }
+    .modal.open { display: grid; }
+    .modal-card { width: min(760px, 100%); max-height: 92vh; overflow: auto; background: white; border-radius: 16px 16px 0 0; box-shadow: var(--shadow-lg); animation: up .2s ease; }
+    @keyframes up { from { transform: translateY(16px); opacity: 0; } to { transform: none; opacity: 1; } }
+    .modal-head { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; background: white; border-bottom: 1px solid var(--line); }
+    .modal-head h3 { font-size: 16px; font-weight: 700; color: var(--ink); }
+    .modal-body { padding: 18px; }
+
+    /* ---------- Side nav ---------- */
+    .side-nav { display: grid; gap: 2px; }
+    .side-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: #6b819f; padding: 18px 12px 6px; }
+    .side-nav button { display: flex; align-items: center; gap: 11px; text-align: left; color: #b6c4d8; border-radius: 8px; min-height: 40px; padding: 0 12px; font-weight: 500; font-size: 13.5px; transition: background .15s, color .15s; position: relative; }
+    .side-nav button:hover { background: rgba(255,255,255,.06); color: white; }
+    .side-nav button.active { background: rgba(255,255,255,.1); color: white; font-weight: 600; }
+    .side-nav button.active::before { content: ""; position: absolute; left: -12px; top: 8px; bottom: 8px; width: 3px; border-radius: 0 3px 3px 0; background: var(--accent); }
+    .side-nav button.active .ic { color: #fb923c; }
+    .side-foot { margin-top: auto; padding: 12px; border-radius: 10px; background: rgba(255,255,255,.05); color: #8ea2bf; font-size: 12px; }
+    .side-foot b { color: white; display: block; font-size: 13px; margin-bottom: 2px; }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 759px) {
+      .dt thead { display: none; }
+      .dt, .dt tbody, .dt tr, .dt td { display: block; width: 100%; }
+      .dt tbody tr { padding: 12px 14px; border-bottom: 1px solid var(--line); }
+      .dt tbody tr:last-child { border-bottom: 0; }
+      .dt tbody td { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 5px 0; border: 0; text-align: right; }
+      .dt tbody td::before { content: attr(data-label); color: var(--muted); font-size: 12px; font-weight: 500; text-align: left; flex: none; }
+      .dt tbody td.lead { padding-bottom: 8px; margin-bottom: 4px; border-bottom: 1px dashed var(--line); text-align: left; }
+      .dt tbody td.lead::before { display: none; }
+      .dt tbody td.act { width: 100%; padding-top: 10px; }
+      .dt tbody td.act::before { display: none; }
+      .dt tbody td.act .actions { width: 100%; justify-content: flex-end; flex-wrap: wrap; }
+      .dt .desc { max-width: 100%; }
+      .dt tbody td .cv { min-width: 0; max-width: 70%; }
+      .dt tbody td.lead .cv, .dt tbody td.act .cv { max-width: 100%; width: 100%; }
+      .dt .cell-prod { min-width: 0; justify-content: flex-end; text-align: left; }
+      .topbar .brand p { display: none; }
+      .dt .prog { min-width: 140px; }
+      .page-title .pt-actions { width: 100%; }
+      .page-title .pt-actions .btn { flex: 1; }
+      .select { flex: 1 1 140px; }
+      .line { grid-template-columns: 1fr 96px 30px; }
+      .detail-kv { grid-template-columns: 110px 1fr; }
+    }
+    @media (min-width: 640px) {
+      .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .nav-grid, .category-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (min-width: 760px) {
+      .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .field.full { grid-column: 1 / -1; }
+      .modal { place-items: center; padding: 20px; }
+      .modal-card { border-radius: 16px; }
+      .content { padding: 24px 24px 32px; }
+      .topbar { padding: 12px 24px; }
+      .toast { left: auto; right: 24px; bottom: 24px; max-width: 420px; }
+    }
+    @media (min-width: 1024px) {
+      .app { display: grid; grid-template-columns: var(--side-w) 1fr; }
+      .side { display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; padding: 18px 12px; background: linear-gradient(180deg, var(--navy) 0%, #0e2242 100%); color: white; overflow-y: auto; }
+      .side .brand { padding: 4px 6px 6px; }
+      .side .brand h1 { color: white; }
+      .side .brand p { color: #8ea2bf; }
+      .topbar .brand { display: none; }
+      .crumb { display: block; }
+      .main { padding-bottom: 0; }
+      .bottom-nav { display: none; }
+      .desktop-only { display: inline-flex; }
+      .stats { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+      .stats.five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+      .nav-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .content { padding: 28px 32px 40px; }
+      .topbar { padding: 12px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="side">
+      <div class="brand"><div class="brandmark" id="sideMark"></div><div><h1>Metal Casting ERP</h1><p>Foundry production suite</p></div></div>
+      <nav class="side-nav" id="sideNav"></nav>
+      <div class="side-foot"><b id="sideConn">Supabase</b>Live production database</div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <div class="brand"><div class="brandmark" id="topMark"></div><div><h1>Metal Casting ERP</h1><p>Foundry production suite</p></div></div>
+        <div class="crumb" id="crumb"></div>
+        <div class="header-actions">
+          <span class="conn" id="connectionState">Connecting…</span>
+          <button class="icon-btn" onclick="goBack()" title="Back" aria-label="Back" id="btnBack"></button>
+          <button class="icon-btn" onclick="refreshAll()" title="Refresh data" aria-label="Refresh" id="btnRefresh"></button>
+        </div>
+      </header>
+      <div class="content">
+        <section id="dashboard" class="screen active"></section>
+        <section id="products" class="screen"></section>
+        <section id="raw" class="screen"></section>
+        <section id="consumables" class="screen"></section>
+        <section id="orders" class="screen"></section>
+        <section id="molding" class="screen"></section>
+        <section id="melting" class="screen"></section>
+      </div>
+    </main>
+  </div>
+
+  <nav class="bottom-nav" id="bottomNav"></nav>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="modal" id="modal" role="dialog" aria-modal="true" onclick="if(event.target===this) closeModal()"></div>
+
+  <script>
+    const SUPABASE_URL = 'https://uzwxlbiburoxxwswyhfn.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_eslhYU3e2HirtqY6Nmi56Q_jdYeKQyK';
+    const API = `${SUPABASE_URL}/rest/v1`;
+    const headers = {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json'
+    };
+
+    /* ============================ ICONS ============================ */
+    const ICONS = {
+      logo: '<path d="M6 3h12l-2 6H8z"/><path d="M8 9c0 5 1.5 8 4 12 2.5-4 4-7 4-12"/>',
+      dashboard: '<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
+      products: '<path d="M21 8 12 3 3 8l9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/>',
+      raw: '<path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/>',
+      consumables: '<path d="M9 3h6"/><path d="M10 3v6L4.6 18.4A1.8 1.8 0 0 0 6.2 21h11.6a1.8 1.8 0 0 0 1.6-2.6L14 9V3"/><path d="M7 15h10"/>',
+      orders: '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6M9 16h4"/>',
+      molding: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>',
+      melting: '<path d="M12 22c4 0 7-3 7-7 0-3-2-5.5-3.5-7-.3 2-1.5 3.5-3 3.5C13 8 12 5 9 2c0 4-4 6.5-4 12 0 4.5 3 8 7 8z"/>',
+      refresh: '<path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/>',
+      back: '<path d="M19 12H5M12 19l-7-7 7-7"/>',
+      search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+      plus: '<path d="M12 5v14M5 12h14"/>',
+      edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+      trash: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>',
+      history: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+      chevron: '<path d="m9 18 6-6-6-6"/>',
+      pause: '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>',
+      play: '<path d="m6 3 14 9-14 9z"/>',
+      check: '<path d="M20 6 9 17l-5-5"/>',
+      close: '<path d="M18 6 6 18M6 6l12 12"/>',
+      flag: '<path d="M4 22V4a1 1 0 0 1 1-1h12l-2 5 2 5H5"/>',
+      clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5h4"/>',
+      inbox: '<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.7 4H7.3a2 2 0 0 0-1.8 1.1z"/>',
+      weight: '<circle cx="12" cy="5" r="3"/><path d="M6.5 8h11l3 13h-17z"/>',
+      status: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>'
+    };
+    const icon = (name, cls = '') => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ''}</svg>`;
+
+    const navItems = [
+      ['dashboard', 'Home', 'Dashboard', 'Overview'],
+      ['products', 'Product', 'Product Master', 'Masters'],
+      ['raw', 'Raw', 'Raw Material', 'Masters'],
+      ['consumables', 'Consumables', 'Consumables', 'Masters'],
+      ['orders', 'Orders', 'Orders', 'Operations'],
+      ['molding', 'Molding', 'Molding', 'Production'],
+      ['melting', 'Melting', 'Melting & Pouring', 'Production']
+    ];
+    const bottomNavIds = ['dashboard', 'products', 'orders', 'molding', 'melting'];
+    const rawCategories = ['Scrap Input', 'FE Alloy & Metal Input'];
+    const consumableCategories = ['Melting & Pouring Consumable', 'Molding & Molding Consumable'];
+    const units = ['KG', 'Ton', 'Gram', 'Litre', 'Pcs', 'Box'];
+    const orderStatuses = ['Pending', 'In Production', 'Completed', 'Delivered', 'Cancelled'];
+    const state = { page: 'dashboard', history: [], loading: true, products: [], raw_materials: [], consumables: [], orders: [], search: {}, filter: { orderStatus: 'All', molding: 'All', melting: 'Ready to Pour' }, molding_jobs: [], molding_entries: [], molding_usage: [], melting_batches: [], melting_usage: [], productionReady: false, productionError: '', selectedRawCategory: null, selectedConsumableCategory: null };
+
+    function request(path, options = {}) {
+      return fetch(`${API}/${path}`, { ...options, headers: { ...headers, ...(options.headers || {}) } })
+        .then(async response => {
+          const text = await response.text();
+          const data = text ? JSON.parse(text) : null;
+          if (!response.ok) throw new Error(data?.message || data?.hint || response.statusText);
+          return data;
+        });
+    }
+
+    function setConn(text, cls) {
+      const el = document.getElementById('connectionState');
+      el.textContent = text;
+      el.className = `conn ${cls || ''}`;
+      document.getElementById('sideConn').textContent = text;
+    }
+
+    async function refreshAll() {
+      setLoading(true);
+      setConn('Syncing…');
+      try {
+        const [products, raw, consumables, orders] = await Promise.all([
+          request('products?select=*&order=created_at.desc'),
+          request('raw_materials?select=*&order=created_at.desc'),
+          request('consumables?select=*&order=created_at.desc'),
+          request('orders?select=*&order=created_at.desc')
+        ]);
+        Object.assign(state, { products, raw_materials: raw, consumables, orders });
+        try {
+          const [jobs, entries, mUsage, batches, bUsage] = await Promise.all([
+            request('molding_jobs?select=*&order=created_at.desc'),
+            request('molding_entries?select=*&order=entry_date.desc'),
+            request('molding_consumable_usage?select=*'),
+            request('melting_batches?select=*&order=created_at.desc'),
+            request('melting_material_usage?select=*')
+          ]);
+          Object.assign(state, { molding_jobs: jobs, molding_entries: entries, molding_usage: mUsage, melting_batches: batches, melting_usage: bUsage, productionReady: true, productionError: '' });
+        } catch (prodError) {
+          Object.assign(state, { productionReady: false, productionError: prodError.message });
+        }
+        setConn('Live', 'ok');
+        setLoading(false);
+        render();
+      } catch (error) {
+        setConn('Offline', 'err');
+        toast(error.message, true);
+        renderError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function setLoading(value) { state.loading = value; }
+    function esc(value) { return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+    function today() { return new Date().toISOString().slice(0, 10); }
+    function moneyDate(value) { return value ? new Date(`${value}T00:00:00`).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Not set'; }
+    function dueDate(o) {
+      if (!o.delivery_date) return `<span class="muted">Not set</span>`;
+      const late = o.delivery_date < today() && !['Completed', 'Delivered', 'Cancelled'].includes(o.status);
+      return `<span class="${late ? 'late' : ''}" title="${late ? 'Overdue' : ''}">${moneyDate(o.delivery_date)}</span>`;
+    }
+    function statusClass(value) { return String(value || '').replace(/\s/g, ''); }
+    function pill(text, cls) { return `<span class="pill ${cls ?? statusClass(text)}">${esc(text)}</span>`; }
+    function activePill(s) { return `<span class="pill ${s === 'Active' ? 'active' : 'inactive'}">${esc(s)}</span>`; }
+    function toast(message, error = false) {
+      const node = document.getElementById('toast');
+      node.innerHTML = `${icon(error ? 'close' : 'check')}<span>${esc(message)}</span>`;
+      node.style.background = error ? '#7f1d1d' : 'var(--navy)';
+      node.classList.add('show');
+      clearTimeout(window.toastTimer);
+      window.toastTimer = setTimeout(() => node.classList.remove('show'), 3000);
+    }
+
+    function navigate(page, opts = {}) {
+      if (!opts.replace && state.page !== page) state.history.push(state.page);
+      state.page = page;
+      document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === page));
+      renderNav();
+      render();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    function goBack() {
+      const prev = state.history.pop();
+      navigate(prev || 'dashboard', { replace: true });
+    }
+
+    function renderNav() {
+      let group = '';
+      const navHtml = navItems.map(([id, short, label, grp]) => {
+        const head = grp !== group ? `<div class="side-label">${grp}</div>` : '';
+        group = grp;
+        return `${head}<button class="${state.page === id ? 'active' : ''}" onclick="navigate('${id}')">${icon(id)}<span>${label}</span></button>`;
+      }).join('');
+      document.getElementById('sideNav').innerHTML = navHtml;
+      document.getElementById('bottomNav').innerHTML = navItems.filter(([id]) => bottomNavIds.includes(id)).map(([id, short]) => `<button class="${state.page === id ? 'active' : ''}" onclick="navigate('${id}')">${icon(id)}<span>${short}</span></button>`).join('');
+      const cur = navItems.find(n => n[0] === state.page);
+      document.getElementById('crumb').innerHTML = cur ? `${cur[3]} &nbsp;/&nbsp; <b>${cur[2]}</b>` : '';
+    }
+
+    function header(title, subtitle, action = '') {
+      return `<div class="page-title"><div><h2>${title}</h2><p>${subtitle}</p></div>${action ? `<div class="pt-actions">${action}</div>` : ''}</div>`;
+    }
+
+    /* ---------- reusable UI builders ---------- */
+    function statCards(list, extraCls = '') {
+      return `<div class="grid stats ${extraCls}">${list.map(([label, value, ic, tone]) => `<div class="card stat tone-${tone || 'orange'}"><div><span>${label}</span><strong>${value}</strong></div><div class="stat-ic">${icon(ic || 'status')}</div></div>`).join('')}</div>`;
+    }
+    function td(label, content, cls = '') { return `<td data-label="${label}" class="${cls}"><div class="cv">${content}</div></td>`; }
+    function emptyState(msg, ic = 'inbox') { return `<div class="empty">${icon(ic)}${msg}</div>`; }
+    function dataTable(cols, rows, emptyMsg) {
+      if (!rows.length) return emptyState(emptyMsg);
+      return `<div class="table-wrap"><table class="dt"><thead><tr>${cols.map(c => { const [l, cls] = Array.isArray(c) ? c : [c, '']; return `<th class="${cls}">${l}</th>`; }).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+    }
+    function tablePanel(title, count, tools, body) {
+      return `<div class="panel"><div class="panel-head"><h3>${title}${count != null ? ` <span class="count">${count}</span>` : ''}</h3>${tools ? `<div class="toolbar">${tools}</div>` : ''}</div>${body}</div>`;
+    }
+    function searchBox(key, placeholder, rerender) {
+      return `<div class="search-box">${icon('search', 'sm')}<input id="q-${key}" class="search" placeholder="${placeholder}" value="${esc(state.search[key] || '')}" oninput="state.search.${key}=this.value; refocus(${rerender}, 'q-${key}')"></div>`;
+    }
+    function refocus(fn, id) {
+      fn();
+      const el = document.getElementById(id);
+      if (el) { el.focus(); const n = el.value.length; el.setSelectionRange(n, n); }
+    }
+    function actBtn(cls, ic, label, onclick, iconOnly = false) {
+      return `<button class="btn small ${cls}${iconOnly ? ' icon-only' : ''}" onclick="${onclick}" title="${label}" aria-label="${label}">${icon(ic, 'sm')}${iconOnly ? '' : `<span>${label}</span>`}</button>`;
+    }
+    function prodCell(img, name, sub) {
+      return `<div class="cell-prod">${thumb(img, name)}<div><b>${esc(name)}</b><small>${esc(sub || '')}</small></div></div>`;
+    }
+
+    function render() {
+      renderNav();
+      renderDashboard();
+      renderProducts();
+      renderRaw();
+      renderConsumables();
+      renderOrders();
+      renderMolding();
+      renderMelting();
+    }
+
+    function renderError(message) {
+      document.getElementById(state.page).innerHTML = header('Connection issue', 'Supabase request failed') + `<div class="notice"><b>Could not load data.</b><br>${esc(message)}<br><br><button class="btn primary small" onclick="refreshAll()">${icon('refresh', 'sm')}<span>Try again</span></button></div>`;
+    }
+
+    function renderDashboard() {
+      const completed = state.orders.filter(o => o.status === 'Completed').length;
+      const pending = state.orders.filter(o => o.status === 'Pending').length;
+      const cards = statCards([
+        ['Total Products', state.products.length, 'products', 'blue'],
+        ['Raw Materials', state.raw_materials.length, 'raw', 'teal'],
+        ['Consumables', state.consumables.length, 'consumables', 'teal'],
+        ['Total Orders', state.orders.length, 'orders', 'orange'],
+        ['Pending Orders', pending, 'clock', 'amber'],
+        ['Completed Orders', completed, 'check', 'green']
+      ]);
+      const recent = state.orders.slice(0, 6);
+      document.getElementById('dashboard').innerHTML =
+        header('Dashboard', 'Manufacturing master data, orders and production at a glance', `<button class="btn primary" onclick="navigate('orders'); openOrderForm()">${icon('plus', 'sm')}<span>New Order</span></button>`) +
+        cards +
+        `<div class="grid nav-grid">
+          ${navTile('products', 'Product Master', 'Products, models and images')}
+          ${navTile('raw', 'Raw Material Master', 'Scrap and FE alloy inputs')}
+          ${navTile('consumables', 'Consumables Master', 'Melting, pouring and molding')}
+          ${navTile('orders', 'Order Management', 'Place and track orders')}
+          ${navTile('molding', 'Molding', `${state.orders.filter(o => ACTIVE_ORDER(o) && (jobFor(o.id)?.status || 'Not Started') !== 'Molds Ready').length} orders waiting for molds`)}
+          ${navTile('melting', 'Melting & Pouring', `${state.orders.reduce((s, o) => s + (ACTIVE_ORDER(o) ? availableMolds(o.id) : 0), 0)} molds ready to pour`)}
+         </div>` +
+        tablePanel('Recent Orders', recent.length, `<button class="btn small ghost" onclick="navigate('orders')"><span>View all</span>${icon('chevron', 'sm')}</button>`,
+          ordersTable(recent, 'No orders yet. Place the first order from Order Management.'));
+    }
+
+    function navTile(page, title, sub) {
+      return `<button class="nav-card" onclick="navigate('${page}')"><span class="nav-icon">${icon(page, 'lg')}</span><span><h3>${title}</h3><p>${sub}</p></span><span class="go">${icon('chevron')}</span></button>`;
+    }
+
+    /* ============================ PRODUCTS ============================ */
+    function renderProducts() {
+      const q = (state.search.products || '').toLowerCase();
+      const rows = state.products.filter(p => `${p.product_name} ${p.model_id} ${p.status}`.toLowerCase().includes(q));
+      const active = state.products.filter(p => p.status === 'Active').length;
+      const body = dataTable(
+        [['Product', ''], ['Model ID', ''], ['Description', ''], ['Status', ''], ['Actions', 'act']],
+        rows.map(p => `<tr class="click" onclick="showProductDetail('${p.id}')">
+          ${td('Product', `<div class="cell-prod">${thumb(p.image_url, p.product_name)}<div><b>${esc(p.product_name)}</b></div></div>`, 'lead')}
+          ${td('Model ID', `<span class="mono">${esc(p.model_id)}</span>`)}
+          ${td('Description', esc(p.description || '—'), 'desc')}
+          ${td('Status', activePill(p.status))}
+          ${td('Actions', `<div class="actions" onclick="event.stopPropagation()">${actBtn('ghost', 'edit', 'Edit', `openProductForm('${p.id}')`)}${actBtn('danger', 'trash', 'Delete', `deleteRow('products','${p.id}')`, true)}</div>`, 'act')}
+        </tr>`),
+        q ? 'No product matches your search.' : 'No products yet. Add a product to start order entry.');
+      document.getElementById('products').innerHTML =
+        header('Product Master', 'Search, add, edit and manage product models', `<button class="btn primary" onclick="openProductForm()">${icon('plus', 'sm')}<span>Add Product</span></button>`) +
+        statCards([['Total Products', state.products.length, 'products', 'blue'], ['Active', active, 'check', 'green'], ['Inactive', state.products.length - active, 'pause', 'red']]) +
+        tablePanel('All Products', rows.length, searchBox('products', 'Search product or model ID', 'renderProducts'), body);
+    }
+
+    /* ======================= RAW / CONSUMABLE MASTERS ======================= */
+    function categoryCards(list, items, key, rerender, ic, noun) {
+      return `<div class="grid category-grid">${list.map(c => {
+        const n = items.filter(x => x.category === c).length;
+        return `<button class="category-card" onclick="state.${key}='${c}'; ${rerender}()"><span class="nav-icon">${icon(ic, 'lg')}</span><span><strong>${c}</strong><span class="sub">${n} saved ${noun}</span></span><span class="big">${n}</span></button>`;
+      }).join('')}</div>`;
+    }
+    function categoryTabs(list, items, key, rerender) {
+      return `<div class="tabs">${list.map(c => `<button class="tab ${state[key] === c ? 'active' : ''}" onclick="state.${key}='${c}'; ${rerender}()">${c} <span class="count">${items.filter(x => x.category === c).length}</span></button>`).join('')}</div>`;
+    }
+    function masterTable(rows, kind, emptyMsg) {
+      const isRaw = kind === 'raw';
+      const table = isRaw ? 'raw_materials' : 'consumables';
+      return dataTable(
+        [['Code', ''], [isRaw ? 'Material Name' : 'Consumable Name', ''], ['Unit', ''], ['Description', ''], ['Status', ''], ['Actions', 'act']],
+        rows.map(r => {
+          const name = isRaw ? r.material_name : r.consumable_name;
+          const code = isRaw ? r.material_code : r.consumable_code;
+          const show = isRaw ? `showRawDetail('${r.id}')` : `showConsumableDetail('${r.id}')`;
+          const edit = isRaw ? `openRawForm('${r.id}')` : `openConsumableForm('${r.id}')`;
+          return `<tr class="click" onclick="${show}">
+            ${td('Code', `<span class="mono">${esc(code)}</span>`, 'nowrap')}
+            ${td('Name', `<span class="strong">${esc(name)}</span>`)}
+            ${td('Unit', `<span class="chip">${esc(r.unit_of_measurement)}</span>`)}
+            ${td('Description', esc(r.description || '—'), 'desc')}
+            ${td('Status', activePill(r.status))}
+            ${td('Actions', `<div class="actions" onclick="event.stopPropagation()">${actBtn('ghost', 'edit', 'Edit', edit)}${actBtn('danger', 'trash', 'Delete', `deleteRow('${table}','${r.id}')`, true)}</div>`, 'act')}
+          </tr>`;
+        }), emptyMsg);
+    }
+
+    function renderRaw() {
+      const cat = state.selectedRawCategory;
+      if (!cat) {
+        document.getElementById('raw').innerHTML =
+          header('Raw Material Master', 'Choose a category to manage materials', `<button class="btn primary" onclick="openRawForm()">${icon('plus', 'sm')}<span>Add Raw Material</span></button>`) +
+          categoryCards(rawCategories, state.raw_materials, 'selectedRawCategory', 'renderRaw', 'raw', 'materials');
+        return;
+      }
+      const q = (state.search.raw || '').toLowerCase();
+      const rows = state.raw_materials.filter(r => r.category === cat && `${r.material_name} ${r.material_code} ${r.status}`.toLowerCase().includes(q));
+      document.getElementById('raw').innerHTML =
+        header('Raw Material Master', 'Raw material records by category', `<button class="btn ghost" onclick="state.selectedRawCategory=null; renderRaw()">${icon('back', 'sm')}<span>Categories</span></button><button class="btn primary" onclick="openRawForm()">${icon('plus', 'sm')}<span>Add Raw Material</span></button>`) +
+        `<div style="margin-bottom:14px">${categoryTabs(rawCategories, state.raw_materials, 'selectedRawCategory', 'renderRaw')}</div>` +
+        tablePanel(esc(cat), rows.length, searchBox('raw', 'Search material name or code', 'renderRaw'), masterTable(rows, 'raw', `No material saved in ${esc(cat)}.`));
+    }
+
+    function renderConsumables() {
+      const cat = state.selectedConsumableCategory;
+      if (!cat) {
+        document.getElementById('consumables').innerHTML =
+          header('Consumables Master', 'Choose a category to manage consumables', `<button class="btn primary" onclick="openConsumableForm()">${icon('plus', 'sm')}<span>Add Consumable</span></button>`) +
+          categoryCards(consumableCategories, state.consumables, 'selectedConsumableCategory', 'renderConsumables', 'consumables', 'consumables');
+        return;
+      }
+      const q = (state.search.consumables || '').toLowerCase();
+      const rows = state.consumables.filter(c => c.category === cat && `${c.consumable_name} ${c.consumable_code} ${c.status}`.toLowerCase().includes(q));
+      document.getElementById('consumables').innerHTML =
+        header('Consumables Master', 'Consumable records by process category', `<button class="btn ghost" onclick="state.selectedConsumableCategory=null; renderConsumables()">${icon('back', 'sm')}<span>Categories</span></button><button class="btn primary" onclick="openConsumableForm()">${icon('plus', 'sm')}<span>Add Consumable</span></button>`) +
+        `<div style="margin-bottom:14px">${categoryTabs(consumableCategories, state.consumables, 'selectedConsumableCategory', 'renderConsumables')}</div>` +
+        tablePanel(esc(cat), rows.length, searchBox('consumables', 'Search consumable name or code', 'renderConsumables'), masterTable(rows, 'consumable', `No consumable saved in ${esc(cat)}.`));
+    }
+
+    /* ============================ ORDERS ============================ */
+    function ordersTable(list, emptyMsg) {
+      return dataTable(
+        [['Order ID', ''], ['Product', ''], ['Customer', ''], ['Qty', 'num'], ['Order Date', ''], ['Delivery', ''], ['Status', ''], ['Actions', 'act']],
+        list.map(o => `<tr class="click" onclick="showOrderDetail('${o.id}')">
+          ${td('Order ID', `<span class="mono">${esc(o.order_id || 'New Order')}</span>`, 'lead nowrap')}
+          ${td('Product', prodCell(o.product_image_url, o.model_name, o.model_id))}
+          ${td('Customer', `<span class="strong">${esc(o.customer_name)}</span>${o.customer_mobile ? `<span class="sub">${esc(o.customer_mobile)}</span>` : ''}`)}
+          ${td('Qty', `<span class="strong">${esc(o.quantity)}</span>`, 'num')}
+          ${td('Order Date', moneyDate(o.order_date), 'nowrap')}
+          ${td('Delivery', dueDate(o), 'nowrap')}
+          ${td('Status', pill(o.status))}
+          ${td('Actions', `<div class="actions" onclick="event.stopPropagation()">${actBtn('ghost', 'edit', 'Edit', `openOrderForm('${o.id}')`)}${actBtn('secondary', 'status', 'Status', `openStatusForm('${o.id}')`)}</div>`, 'act')}
+        </tr>`), emptyMsg);
+    }
+
+    function renderOrders() {
+      const q = (state.search.orders || '').toLowerCase();
+      const filter = state.filter.orderStatus;
+      const rows = state.orders.filter(o => (filter === 'All' || o.status === filter) && `${o.order_id} ${o.model_name} ${o.customer_name} ${o.model_id}`.toLowerCase().includes(q));
+      const by = s => state.orders.filter(o => o.status === s).length;
+      document.getElementById('orders').innerHTML =
+        header('Order Management', 'Place orders and track production through delivery', `<button class="btn primary" onclick="openOrderForm()">${icon('plus', 'sm')}<span>Place New Order</span></button>`) +
+        statCards([['Total Orders', state.orders.length, 'orders', 'orange'], ['Pending', by('Pending'), 'clock', 'amber'], ['In Production', by('In Production'), 'melting', 'blue'], ['Completed', by('Completed'), 'check', 'green'], ['Delivered', by('Delivered'), 'flag', 'teal']], 'five') +
+        tablePanel('Orders', rows.length,
+          searchBox('orders', 'Search order, customer or model', 'renderOrders') +
+          `<select class="select" onchange="state.filter.orderStatus=this.value; renderOrders()">${['All', ...orderStatuses].map(s => `<option value="${s}" ${filter === s ? 'selected' : ''}>${s === 'All' ? 'All statuses' : s}</option>`).join('')}</select>`,
+          ordersTable(rows, 'No orders match this filter.'));
+    }
+
+    function thumb(src, label, cls = '') {
+      return `<span class="thumb ${cls}">${src ? `<img src="${esc(src)}" alt="" loading="lazy">` : esc(String(label || 'MC').slice(0,2).toUpperCase())}</span>`;
+    }
+
+    function modal(title, body) {
+      document.getElementById('modal').innerHTML = `<div class="modal-card"><div class="modal-head"><h3>${title}</h3><button class="icon-btn" onclick="closeModal()" aria-label="Close">${icon('close')}</button></div><div class="modal-body">${body}</div></div>`;
+      document.getElementById('modal').classList.add('open');
+    }
+    function closeModal() { document.getElementById('modal').classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+    function field(id, label, value = '', type = 'text', req = false) {
+      return `<div class="field ${type === 'textarea' ? 'full' : ''}" data-field="${id}"><label for="${id}">${label}${req ? ' <span class="req">*</span>' : ''}</label>${type === 'textarea' ? `<textarea id="${id}">${esc(value)}</textarea>` : `<input id="${id}" type="${type}" value="${esc(value)}">`}<div class="error">${label} is required</div></div>`;
+    }
+    function selectField(id, label, value, options, req = false) {
+      return `<div class="field" data-field="${id}"><label for="${id}">${label}${req ? ' <span class="req">*</span>' : ''}</label><select id="${id}">${options.map(o => `<option value="${esc(o)}" ${value === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select><div class="error">${label} is required</div></div>`;
+    }
+    function validate(ids) {
+      let ok = true;
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        const wrap = document.querySelector(`[data-field="${id}"]`);
+        const invalid = !String(el.value || '').trim();
+        wrap?.classList.toggle('invalid', invalid);
+        if (invalid) ok = false;
+      });
+      return ok;
+    }
+    function formActions(submitLabel, extra = '') {
+      return `<div class="form-actions field full"><button class="btn ghost" type="button" onclick="closeModal()">Cancel</button>${extra}<button class="btn primary" type="submit">${icon('check', 'sm')}<span>${submitLabel}</span></button></div>`;
+    }
+
+    function imageUpload(current = '') {
+      return `<div class="field full"><label>Product Image</label><div class="upload-box"><div class="preview" id="imagePreview">${current ? `<img src="${esc(current)}" alt="">` : 'No image'}</div><div><input id="imageFile" type="file" accept="image/*" capture="environment" onchange="previewImage(event)"><input id="imageUrl" class="search" placeholder="Or paste image URL" value="${esc(current)}" oninput="setPreview(this.value)" style="margin-top:8px"></div></div></div>`;
+    }
+    function previewImage(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => { document.getElementById('imageUrl').value = reader.result; setPreview(reader.result); };
+      reader.readAsDataURL(file);
+    }
+    function setPreview(src) { document.getElementById('imagePreview').innerHTML = src ? `<img src="${esc(src)}" alt="">` : 'No image'; }
+
+    function openProductForm(id) {
+      const p = state.products.find(x => x.id === id) || {};
+      modal(id ? 'Edit Product' : 'Add Product', `<form class="form-grid" onsubmit="saveProduct(event,'${id || ''}')">
+        ${imageUpload(p.image_url || '')}
+        ${field('product_name', 'Product Name', p.product_name, 'text', true)}
+        ${field('model_id', 'Model ID', p.model_id, 'text', true)}
+        ${selectField('status', 'Status', p.status || 'Active', ['Active', 'Inactive'])}
+        ${field('description', 'Product Description', p.description, 'textarea')}
+        ${formActions('Save Product')}</form>`);
+    }
+    async function saveProduct(event, id) {
+      event.preventDefault();
+      if (!validate(['product_name', 'model_id'])) return;
+      const payload = { product_name: val('product_name'), model_id: val('model_id'), description: val('description'), status: val('status'), image_url: val('imageUrl') || null };
+      await save('products', id, payload, 'Product saved');
+    }
+
+    function openRawForm(id) {
+      const r = state.raw_materials.find(x => x.id === id) || { category: state.selectedRawCategory };
+      modal(id ? 'Edit Raw Material' : 'Add Raw Material', `<form class="form-grid" onsubmit="saveRaw(event,'${id || ''}')">
+        ${selectField('category', 'Material Category', r.category || state.selectedRawCategory || rawCategories[0], rawCategories, true)}
+        ${field('material_name', 'Material Name', r.material_name, 'text', true)}
+        ${field('material_code', 'Material Code', r.material_code, 'text', true)}
+        ${selectField('unit_of_measurement', 'Unit of Measurement', r.unit_of_measurement || 'KG', units, true)}
+        ${selectField('status', 'Status', r.status || 'Active', ['Active', 'Inactive'])}
+        ${field('description', 'Description', r.description, 'textarea')}
+        ${formActions('Save Material')}</form>`);
+    }
+    async function saveRaw(event, id) {
+      event.preventDefault();
+      if (!validate(['category', 'material_name', 'material_code', 'unit_of_measurement'])) return;
+      const cat = val('category');
+      await save('raw_materials', id, { category: cat, material_name: val('material_name'), material_code: val('material_code'), unit_of_measurement: val('unit_of_measurement'), description: val('description'), status: val('status') }, 'Raw material saved');
+      state.selectedRawCategory = cat;
+      renderRaw();
+    }
+
+    function openConsumableForm(id) {
+      const c = state.consumables.find(x => x.id === id) || { category: state.selectedConsumableCategory };
+      modal(id ? 'Edit Consumable' : 'Add Consumable', `<form class="form-grid" onsubmit="saveConsumable(event,'${id || ''}')">
+        ${selectField('category', 'Consumable Category', c.category || state.selectedConsumableCategory || consumableCategories[0], consumableCategories, true)}
+        ${field('consumable_name', 'Consumable Name', c.consumable_name, 'text', true)}
+        ${field('consumable_code', 'Consumable Code', c.consumable_code, 'text', true)}
+        ${selectField('unit_of_measurement', 'Unit of Measurement', c.unit_of_measurement || 'KG', units, true)}
+        ${selectField('status', 'Status', c.status || 'Active', ['Active', 'Inactive'])}
+        ${field('description', 'Description', c.description, 'textarea')}
+        ${formActions('Save Consumable')}</form>`);
+    }
+    async function saveConsumable(event, id) {
+      event.preventDefault();
+      if (!validate(['category', 'consumable_name', 'consumable_code', 'unit_of_measurement'])) return;
+      const cat = val('category');
+      await save('consumables', id, { category: cat, consumable_name: val('consumable_name'), consumable_code: val('consumable_code'), unit_of_measurement: val('unit_of_measurement'), description: val('description'), status: val('status') }, 'Consumable saved');
+      state.selectedConsumableCategory = cat;
+      renderConsumables();
+    }
+
+    function openOrderForm(id) {
+      const o = state.orders.find(x => x.id === id) || { order_date: today(), status: 'Pending' };
+      const productOptions = state.products.map(p => `<option value="${p.id}" ${o.product_id === p.id ? 'selected' : ''}>${esc(p.product_name)} (${esc(p.model_id)})</option>`).join('');
+      modal(id ? 'Edit Order' : 'Place New Order', `<form class="form-grid" onsubmit="saveOrder(event,'${id || ''}')">
+        <div class="field"><label>Order ID</label><input value="${esc(o.order_id || 'Auto: ORD-000001')}" disabled></div>
+        <div class="field" data-field="product_id"><label for="product_id">Model Name <span class="req">*</span></label><select id="product_id" onchange="syncProductFields()"><option value="">Select product</option>${productOptions}</select><div class="error">Model Name is required</div></div>
+        ${field('model_id_auto', 'Model ID', o.model_id || '', 'text', true)}
+        <div class="field"><label>Product Image</label><div class="preview" id="orderImage">${o.product_image_url ? `<img src="${esc(o.product_image_url)}" alt="">` : 'No image'}</div></div>
+        ${field('customer_name', 'Customer Name', o.customer_name, 'text', true)}
+        ${field('customer_mobile', 'Customer Mobile Number', o.customer_mobile, 'tel')}
+        ${field('order_date', 'Order Date', o.order_date || today(), 'date', true)}
+        ${field('delivery_date', 'Delivery Date', o.delivery_date, 'date')}
+        ${field('quantity', 'Quantity', o.quantity || 1, 'number', true)}
+        ${selectField('status', 'Order Status', o.status || 'Pending', orderStatuses)}
+        ${field('remarks', 'Remarks', o.remarks, 'textarea')}
+        ${formActions(id ? 'Update Order' : 'Submit Order')}</form>`);
+      syncProductFields();
+    }
+    function syncProductFields() {
+      const p = state.products.find(x => x.id === val('product_id'));
+      const model = document.getElementById('model_id_auto');
+      const image = document.getElementById('orderImage');
+      if (p && model) model.value = p.model_id;
+      if (image) image.innerHTML = p?.image_url ? `<img src="${esc(p.image_url)}" alt="">` : 'No image';
+    }
+    async function saveOrder(event, id) {
+      event.preventDefault();
+      if (!validate(['product_id', 'model_id_auto', 'customer_name', 'order_date', 'quantity'])) return;
+      const p = state.products.find(x => x.id === val('product_id'));
+      const payload = { product_id: p.id, model_name: p.product_name, model_id: p.model_id, product_image_url: p.image_url, customer_name: val('customer_name'), customer_mobile: val('customer_mobile'), order_date: val('order_date'), delivery_date: val('delivery_date') || null, quantity: Number(val('quantity')), remarks: val('remarks'), status: val('status') || 'Pending' };
+      await save('orders', id, payload, 'Order saved');
+    }
+
+    function openStatusForm(id) {
+      const o = state.orders.find(x => x.id === id);
+      modal(`Update Status · ${esc(o.order_id || '')}`, `<form class="form-grid" onsubmit="saveStatus(event,'${id}')"><div class="field full">${selectField('status', 'Order Status', o.status, orderStatuses)}</div>${formActions('Update Status')}</form>`);
+    }
+    async function saveStatus(event, id) { event.preventDefault(); await save('orders', id, { status: val('status') }, 'Status updated'); }
+
+    function val(id) { return document.getElementById(id)?.value?.trim() || ''; }
+    async function save(table, id, payload, message) {
+      try {
+        if (id) await request(`${table}?id=eq.${id}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(payload) });
+        else await request(table, { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(payload) });
+        closeModal();
+        await refreshAll();
+        toast(message);
+      } catch (error) { toast(error.message, true); }
+    }
+    async function deleteRow(table, id) {
+      if (!confirm('Delete this record?')) return;
+      try {
+        await request(`${table}?id=eq.${id}`, { method: 'DELETE' });
+        closeModal();
+        await refreshAll();
+        toast('Record deleted');
+      } catch (error) { toast(error.message, true); }
+    }
+
+    function details(title, rows, actions = '', top = '') {
+      modal(title, `${top}<div class="detail">${rows.map(([k,v]) => `<div class="detail-kv"><span>${esc(k)}</span><strong>${v || '—'}</strong></div>`).join('')}</div><div class="form-actions">${actions}</div>`);
+    }
+    function detailTop(img, name, sub, badge) {
+      return `<div class="ctx" style="margin-bottom:14px">${thumb(img, name, 'lg')}<div style="flex:1"><b style="font-size:16px">${esc(name)}</b><small>${sub}</small></div>${badge || ''}</div>`;
+    }
+    function showProductDetail(id) {
+      const p = state.products.find(x => x.id === id);
+      details('Product Details', [['Product Name', esc(p.product_name)], ['Model ID', `<span class="mono">${esc(p.model_id)}</span>`], ['Status', activePill(p.status)], ['Description', esc(p.description || '—')]],
+        `<button class="btn danger" onclick="deleteRow('products','${id}')">${icon('trash', 'sm')}<span>Delete</span></button><button class="btn primary" onclick="openProductForm('${id}')">${icon('edit', 'sm')}<span>Edit Product</span></button>`,
+        detailTop(p.image_url, p.product_name, esc(p.model_id), activePill(p.status)));
+    }
+    function showRawDetail(id) {
+      const r = state.raw_materials.find(x => x.id === id);
+      details('Raw Material Details', [['Category', esc(r.category)], ['Material Name', esc(r.material_name)], ['Material Code', `<span class="mono">${esc(r.material_code)}</span>`], ['Unit', esc(r.unit_of_measurement)], ['Status', activePill(r.status)], ['Description', esc(r.description || '—')]], `<button class="btn danger" onclick="deleteRow('raw_materials','${id}')">${icon('trash', 'sm')}<span>Delete</span></button><button class="btn primary" onclick="openRawForm('${id}')">${icon('edit', 'sm')}<span>Edit Material</span></button>`);
+    }
+    function showConsumableDetail(id) {
+      const c = state.consumables.find(x => x.id === id);
+      details('Consumable Details', [['Category', esc(c.category)], ['Consumable Name', esc(c.consumable_name)], ['Consumable Code', `<span class="mono">${esc(c.consumable_code)}</span>`], ['Unit', esc(c.unit_of_measurement)], ['Status', activePill(c.status)], ['Description', esc(c.description || '—')]], `<button class="btn danger" onclick="deleteRow('consumables','${id}')">${icon('trash', 'sm')}<span>Delete</span></button><button class="btn primary" onclick="openConsumableForm('${id}')">${icon('edit', 'sm')}<span>Edit Consumable</span></button>`);
+    }
+    function showOrderDetail(id) {
+      const o = state.orders.find(x => x.id === id);
+      details(`Order ${esc(o.order_id || '')}`, [['Order ID', `<span class="mono">${esc(o.order_id)}</span>`], ['Model Name', esc(o.model_name)], ['Model ID', `<span class="mono">${esc(o.model_id)}</span>`], ['Customer', esc(o.customer_name)], ['Mobile', esc(o.customer_mobile || '—')], ['Quantity', esc(o.quantity)], ['Order Date', moneyDate(o.order_date)], ['Delivery Date', dueDate(o)], ['Status', pill(o.status)], ['Molds Made', state.productionReady ? `${num(jobFor(o.id)?.molds_made)} / ${num(jobFor(o.id)?.molds_required ?? o.quantity)}` : '—'], ['Molds Poured', state.productionReady ? String(pouredFor(o.id)) : '—'], ['Remarks', esc(o.remarks || '—')]],
+        `<button class="btn danger" onclick="save('orders','${id}',{status:'Cancelled'},'Order cancelled')">${icon('close', 'sm')}<span>Cancel Order</span></button><button class="btn secondary" onclick="openStatusForm('${id}')">${icon('status', 'sm')}<span>Update Status</span></button><button class="btn primary" onclick="openOrderForm('${id}')">${icon('edit', 'sm')}<span>Edit Order</span></button>`,
+        detailTop(o.product_image_url, o.model_name, `${esc(o.model_id)} · ${esc(o.customer_name)} · Qty ${esc(o.quantity)}`, pill(o.status)));
+    }
+
+    /* =================== PRODUCTION: MOLDING + MELTING =================== */
+    const ACTIVE_ORDER = o => !['Cancelled', 'Delivered'].includes(o.status);
+    const HEAT_FLOW = ['Pending', 'Melting', 'Ready for Pouring', 'Poured'];
+    const num = v => Number(v || 0);
+    const fmt = v => { const n = num(v); return Number.isInteger(n) ? String(n) : n.toFixed(3).replace(/0+$/, '').replace(/\.$/, ''); };
+    function jobFor(orderId) { return state.molding_jobs.find(j => j.order_uuid === orderId); }
+    function batchesFor(orderId) { return state.melting_batches.filter(b => b.order_uuid === orderId); }
+    function pouredFor(orderId) { return batchesFor(orderId).reduce((s, b) => s + num(b.molds_poured), 0); }
+    function availableMolds(orderId) { return Math.max(num(jobFor(orderId)?.molds_made) - pouredFor(orderId), 0); }
+    function orderById(id) { return state.orders.find(o => o.id === id); }
+    function progress(done, total) {
+      const pct = total > 0 ? Math.min(100, Math.round(done / total * 100)) : 0;
+      return `<div class="prog"><div class="progress ${pct >= 100 ? 'done' : ''}"><i style="width:${pct}%"></i></div><small>${pct}%</small></div>`;
+    }
+    function tabs(key, list, rerender, counts = {}) {
+      return `<div class="tabs">${list.map(t => `<button class="tab ${state.filter[key] === t ? 'active' : ''}" onclick="state.filter.${key}='${t}'; ${rerender}()">${t}${counts[t] != null ? ` <span class="count">${counts[t]}</span>` : ''}</button>`).join('')}</div>`;
+    }
+    function summary(items) {
+      return `<div class="summary">${items.map(([l, v]) => `<div><span>${l}</span><b>${v}</b></div>`).join('')}</div>`;
+    }
+    function ctxBox(o, extra) {
+      return `<div class="field full"><div class="ctx">${thumb(o.product_image_url, o.model_name)}<div><b>${esc(o.model_name)}</b><small>${esc(o.model_id)} · ${esc(o.customer_name)} · Order qty ${esc(o.quantity)}</small><small>${extra}</small></div></div></div>`;
+    }
+    function productionMissing(target) {
+      document.getElementById(target).innerHTML = header(target === 'molding' ? 'Molding' : 'Melting & Pouring', 'Production tables not found') +
+        `<div class="notice">Run <b>supabase_molding_melting_v2.sql</b> in the Supabase SQL Editor, then press Refresh.<br><small>${esc(state.productionError || '')}</small></div>`;
+    }
+
+    /* ---------- material line pickers (used by both forms) ---------- */
+    function lineOptions(kind) {
+      const opt = (id, name, unit, type, cat, code) => `<option value="${id}" data-name="${esc(name)}" data-unit="${esc(unit)}" data-type="${type}" data-cat="${esc(cat)}">${esc(name)}${code ? ` (${esc(code)})` : ''}</option>`;
+      if (kind === 'raw') {
+        return rawCategories.map(cat => `<optgroup label="${esc(cat)}">${state.raw_materials.filter(r => r.category === cat && r.status === 'Active').map(r => opt(r.id, r.material_name, r.unit_of_measurement, 'Raw Material', cat, r.material_code)).join('')}</optgroup>`).join('');
+      }
+      const cat = kind === 'mold' ? 'Molding & Molding Consumable' : 'Melting & Pouring Consumable';
+      return state.consumables.filter(c => c.category === cat && c.status === 'Active').map(c => opt(c.id, c.consumable_name, c.unit_of_measurement, 'Consumable', cat, c.consumable_code)).join('');
+    }
+    function addLine(containerId, kind, preset = {}) {
+      const box = document.getElementById(containerId);
+      if (!box) return;
+      const row = document.createElement('div');
+      row.className = 'line';
+      row.innerHTML = `<select onchange="lineUnit(this)"><option value="">Select ${kind === 'raw' ? 'raw material' : 'consumable'}</option>${lineOptions(kind)}</select>
+        <input type="number" step="0.001" min="0" placeholder="Qty" value="${preset.qty != null ? esc(preset.qty) : ''}">
+        <button type="button" class="btn small danger icon-only" onclick="this.parentNode.remove()" title="Remove line" aria-label="Remove line">${icon('close', 'sm')}</button>`;
+      box.appendChild(row);
+      if (preset.id) { row.querySelector('select').value = preset.id; lineUnit(row.querySelector('select')); }
+    }
+    function lineUnit(select) {
+      const unit = select.selectedOptions[0]?.dataset.unit;
+      select.parentNode.querySelector('input').placeholder = unit ? `Qty (${unit})` : 'Qty';
+    }
+    function collectLines(containerId) {
+      const out = [];
+      for (const row of document.querySelectorAll(`#${containerId} .line`)) {
+        const sel = row.querySelector('select');
+        const qty = num(row.querySelector('input').value);
+        if (!sel.value && !qty) continue;
+        if (!sel.value || qty <= 0) { toast('Every material line needs an item and a quantity above 0', true); return null; }
+        const o = sel.selectedOptions[0].dataset;
+        out.push({ id: sel.value, name: o.name, unit: o.unit, type: o.type, cat: o.cat, qty });
+      }
+      return out;
+    }
+    function lineBlock(id, label, kind, btnText) {
+      return `<div class="field full"><div class="line-head"><label>${label}</label><button type="button" class="btn small secondary" onclick="addLine('${id}','${kind}')">${icon('plus', 'sm')}<span>${btnText}</span></button></div><div class="lines" id="${id}"></div></div>`;
+    }
+    function usageChips(items) {
+      return items.length ? `<div class="chips">${items.map(u => `<span class="chip">${esc(u.name)}: <b>${fmt(u.qty)}</b> ${esc(u.unit || '')}</span>`).join('')}</div>` : `<span class="hint">No material recorded</span>`;
+    }
+    function usageTable(items, emptyMsg) {
+      return dataTable([['Item', ''], ['Quantity', 'num'], ['Unit', '']],
+        items.map(u => `<tr>${td('Item', `<span class="strong">${esc(u.name)}</span>`, 'lead')}${td('Quantity', fmt(u.qty), 'num')}${td('Unit', esc(u.unit || ''))}</tr>`), emptyMsg);
+    }
+    function totalsByItem(items) {
+      const map = {};
+      items.forEach(u => { const k = `${u.name}|${u.unit}`; map[k] = map[k] || { name: u.name, unit: u.unit, qty: 0 }; map[k].qty += num(u.qty); });
+      return Object.values(map);
+    }
+
+    /* ============================ MOLDING ============================ */
+    function moldingStatus(o) { return jobFor(o.id)?.status || 'Not Started'; }
+
+    function renderMolding() {
+      if (!state.productionReady) return productionMissing('molding');
+      const q = (state.search.molding || '').toLowerCase();
+      const tab = state.filter.molding;
+      const active = state.orders.filter(ACTIVE_ORDER);
+      const rows = active.filter(o => (tab === 'All' || moldingStatus(o) === tab) && `${o.order_id} ${o.model_name} ${o.model_id} ${o.customer_name}`.toLowerCase().includes(q));
+      const required = active.reduce((s, o) => s + num(jobFor(o.id)?.molds_required ?? o.quantity), 0);
+      const made = active.reduce((s, o) => s + num(jobFor(o.id)?.molds_made), 0);
+      const today_ = state.molding_entries.filter(e => e.entry_date === today()).reduce((s, e) => s + num(e.molds_made), 0);
+      const tabList = ['All', 'Not Started', 'In Progress', 'Molds Ready', 'Hold'];
+      const counts = Object.fromEntries(tabList.map(t => [t, t === 'All' ? active.length : active.filter(o => moldingStatus(o) === t).length]));
+      document.getElementById('molding').innerHTML =
+        header('Molding', 'All open orders — make molds and record molding consumables') +
+        statCards([['Open Orders', active.filter(o => moldingStatus(o) !== 'Molds Ready').length, 'orders', 'orange'], ['Molds Required', required, 'molding', 'blue'], ['Molds Made', made, 'check', 'green'], ['Molds Pending', Math.max(required - made, 0), 'clock', 'amber'], ['Made Today', today_, 'status', 'teal'], ['On Hold', active.filter(o => moldingStatus(o) === 'Hold').length, 'pause', 'red']]) +
+        `<div style="margin-bottom:14px">${tabs('molding', tabList, 'renderMolding', counts)}</div>` +
+        tablePanel('Molding Queue', rows.length, searchBox('molding', 'Search order, model or customer', 'renderMolding'),
+          dataTable(
+            [['Order', ''], ['Product / Customer', ''], ['Delivery', ''], ['Required', 'num'], ['Made', 'num'], ['Pending', 'num'], ['Progress', 'wide'], ['Status', ''], ['Actions', 'act']],
+            rows.map(moldingRow), 'No orders in this view.'));
+    }
+
+    function moldingRow(o) {
+      const job = jobFor(o.id);
+      const req = num(job?.molds_required ?? o.quantity);
+      const made = num(job?.molds_made);
+      const st = moldingStatus(o);
+      return `<tr class="click" onclick="${job ? `showMoldingHistory('${o.id}')` : `openMoldingEntry('${o.id}')`}">
+        ${td('Order', `<span class="mono">${esc(o.order_id)}</span>`, 'lead nowrap')}
+        ${td('Product', prodCell(o.product_image_url, o.model_name, `${o.model_id} · ${o.customer_name}`))}
+        ${td('Delivery', dueDate(o), 'nowrap')}
+        ${td('Required', `<span class="strong">${req}</span>`, 'num')}
+        ${td('Made', made, 'num')}
+        ${td('Pending', Math.max(req - made, 0), 'num')}
+        ${td('Progress', progress(made, req))}
+        ${td('Status', pill(st))}
+        ${td('Actions', `<div class="actions" onclick="event.stopPropagation()">
+          ${st === 'Hold' ? '' : actBtn('primary', 'plus', 'Add Molds', `openMoldingEntry('${o.id}')`)}
+          ${job ? actBtn('ghost', 'history', 'History', `showMoldingHistory('${o.id}')`, true) + actBtn(st === 'Hold' ? 'success' : 'danger', st === 'Hold' ? 'play' : 'pause', st === 'Hold' ? 'Resume' : 'Hold', `toggleMoldingHold('${o.id}')`, st !== 'Hold') : ''}
+        </div>`, 'act')}
+      </tr>`;
+    }
+
+    function openMoldingEntry(orderId) {
+      const o = orderById(orderId);
+      const job = jobFor(orderId);
+      const req = job?.molds_required ?? o.quantity;
+      const made = num(job?.molds_made);
+      modal(`Molding Entry · ${esc(o.order_id)}`, `<form class="form-grid" onsubmit="saveMoldingEntry(event,'${orderId}')">
+        ${ctxBox(o, `Molds made so far: <b>${made}</b> of ${esc(req)}`)}
+        ${field('molds_required', 'Molds Required (total)', req, 'number', true)}
+        ${field('molds_made', 'Molds Made in this Entry', Math.max(num(req) - made, 1), 'number', true)}
+        ${field('entry_date', 'Work Date', today(), 'date', true)}
+        ${field('operator_name', 'Molding Person', job?.operator_name || '', 'text')}
+        ${lineBlock('lines_mold', 'Molding Consumables Used', 'mold', 'Add consumable')}
+        ${field('remarks', 'Remarks', '', 'textarea')}
+        ${formActions('Save Molding Entry')}</form>`);
+      addLine('lines_mold', 'mold');
+      if (!lineOptions('mold')) toast('No active Molding consumables in master. Add them in Consumables Master.', true);
+    }
+
+    async function saveMoldingEntry(event, orderId) {
+      event.preventDefault();
+      if (!validate(['molds_required', 'molds_made', 'entry_date'])) return;
+      const required = Math.floor(num(val('molds_required')));
+      const madeNow = Math.floor(num(val('molds_made')));
+      if (required <= 0 || madeNow <= 0) return toast('Molds must be more than 0', true);
+      const lines = collectLines('lines_mold');
+      if (!lines) return;
+      let job = jobFor(orderId);
+      if (num(job?.molds_made) + madeNow > required && !confirm(`Total molds (${num(job?.molds_made) + madeNow}) will be more than required (${required}). Save anyway?`)) return;
+      const rep = { Prefer: 'return=representation' };
+      try {
+        if (!job) {
+          [job] = await request('molding_jobs', { method: 'POST', headers: rep, body: JSON.stringify({ order_uuid: orderId, molds_required: required, operator_name: val('operator_name') || null }) });
+        } else if (num(job.molds_required) !== required || (val('operator_name') && val('operator_name') !== job.operator_name)) {
+          await request(`molding_jobs?id=eq.${job.id}`, { method: 'PATCH', body: JSON.stringify({ molds_required: required, operator_name: val('operator_name') || job.operator_name }) });
+        }
+        const [entry] = await request('molding_entries', { method: 'POST', headers: rep, body: JSON.stringify({ molding_job_id: job.id, order_uuid: orderId, entry_date: val('entry_date'), molds_made: madeNow, operator_name: val('operator_name') || null, remarks: val('remarks') || null }) });
+        if (lines.length) {
+          await request('molding_consumable_usage', { method: 'POST', body: JSON.stringify(lines.map(l => ({ molding_entry_id: entry.id, molding_job_id: job.id, consumable_id: l.id, consumable_name: l.name, unit_of_measurement: l.unit, qty: l.qty }))) });
+        }
+        closeModal();
+        await refreshAll();
+        toast(`${madeNow} molds recorded`);
+      } catch (error) { toast(error.message, true); }
+    }
+
+    function moldUsage(filterFn) {
+      return state.molding_usage.filter(filterFn).map(u => ({ name: u.consumable_name, unit: u.unit_of_measurement, qty: u.qty }));
+    }
+
+    function showMoldingHistory(orderId) {
+      const o = orderById(orderId);
+      const job = jobFor(orderId);
+      if (!job) return openMoldingEntry(orderId);
+      const entries = state.molding_entries.filter(e => e.molding_job_id === job.id).sort((a, b) => (b.entry_date + b.created_at).localeCompare(a.entry_date + a.created_at));
+      const totals = totalsByItem(moldUsage(u => u.molding_job_id === job.id));
+      modal(`Molding History · ${esc(o.order_id)}`, `
+        ${summary([['Required', job.molds_required], ['Made', job.molds_made], ['Poured', pouredFor(orderId)], ['Status', pill(job.status)]])}
+        ${progress(job.molds_made, job.molds_required)}
+        <div class="section-label">Total consumables used</div>${usageTable(totals, 'No consumables recorded.')}
+        <div class="section-label">Entries (${entries.length})</div>
+        ${dataTable([['Date', ''], ['Molds', 'num'], ['Operator', ''], ['Consumables', ''], ['Remarks', ''], ['', 'act']],
+          entries.map(e => `<tr>
+            ${td('Date', `<span class="strong">${moneyDate(e.entry_date)}</span>`, 'lead nowrap')}
+            ${td('Molds', `<span class="strong">${e.molds_made}</span>`, 'num')}
+            ${td('Operator', esc(e.operator_name || '—'))}
+            ${td('Consumables', usageChips(moldUsage(u => u.molding_entry_id === e.id)))}
+            ${td('Remarks', esc(e.remarks || '—'), 'desc')}
+            ${td('', `<div class="actions">${actBtn('danger', 'trash', 'Delete entry', `deleteMoldingEntry('${e.id}','${orderId}')`, true)}</div>`, 'act')}
+          </tr>`), 'No entries yet.')}
+        <div class="form-actions" style="margin-top:16px"><button class="btn ghost" onclick="closeModal()">Close</button>${job.status === 'Hold' ? '' : `<button class="btn primary" onclick="openMoldingEntry('${orderId}')">${icon('plus', 'sm')}<span>Add Molds</span></button>`}</div>`);
+    }
+
+    async function deleteMoldingEntry(entryId, orderId) {
+      const e = state.molding_entries.find(x => x.id === entryId);
+      const job = jobFor(orderId);
+      if (num(job.molds_made) - num(e.molds_made) < pouredFor(orderId)) return toast('Cannot delete: these molds are already used in melting/pouring', true);
+      if (!confirm(`Delete this entry of ${e.molds_made} molds?`)) return;
+      try {
+        await request(`molding_entries?id=eq.${entryId}`, { method: 'DELETE' });
+        await refreshAll();
+        toast('Molding entry deleted');
+        showMoldingHistory(orderId);
+      } catch (error) { toast(error.message, true); }
+    }
+
+    async function toggleMoldingHold(orderId) {
+      const job = jobFor(orderId);
+      if (!job) return;
+      try {
+        await request(`molding_jobs?id=eq.${job.id}`, { method: 'PATCH', body: JSON.stringify({ status: job.status === 'Hold' ? 'In Progress' : 'Hold' }) });
+        await refreshAll();
+        toast(job.status === 'Hold' ? 'Molding resumed' : 'Molding put on hold');
+      } catch (error) { toast(error.message, true); }
+    }
+
+    /* ======================== MELTING & POURING ======================== */
+    function meltingView(o) {
+      const avail = availableMolds(o.id);
+      return avail > 0 ? 'Ready to Pour' : 'Fully Poured';
+    }
+
+    function renderMelting() {
+      if (!state.productionReady) return productionMissing('melting');
+      const q = (state.search.melting || '').toLowerCase();
+      const tab = state.filter.melting;
+      const withMolds = state.orders.filter(o => ACTIVE_ORDER(o) && num(jobFor(o.id)?.molds_made) > 0);
+      const rows = withMolds.filter(o => (tab === 'All' || meltingView(o) === tab) && `${o.order_id} ${o.model_name} ${o.model_id} ${o.customer_name}`.toLowerCase().includes(q));
+      const avail = withMolds.reduce((s, o) => s + availableMolds(o.id), 0);
+      const pouredKg = state.melting_batches.reduce((s, b) => s + num(b.pour_qty_kg), 0);
+      const meltKg = state.melting_batches.reduce((s, b) => s + num(b.melt_qty_kg), 0);
+      const running = state.melting_batches.filter(b => !['Poured', 'Hold'].includes(b.status)).length;
+      const tabList = ['Ready to Pour', 'Fully Poured', 'All'];
+      const counts = Object.fromEntries(tabList.map(t => [t, t === 'All' ? withMolds.length : withMolds.filter(o => meltingView(o) === t).length]));
+      const recent = [...state.melting_batches].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 10);
+      document.getElementById('melting').innerHTML =
+        header('Melting & Pouring', 'Orders with ready molds — melt raw material and pour') +
+        statCards([['Orders with Molds', withMolds.length, 'orders', 'orange'], ['Molds to Pour', avail, 'molding', 'amber'], ['Active Heats', running, 'melting', 'red'], ['Total Heats', state.melting_batches.length, 'history', 'blue'], ['Melted (kg)', fmt(meltKg), 'weight', 'teal'], ['Poured (kg)', fmt(pouredKg), 'check', 'green']]) +
+        `<div style="margin-bottom:14px">${tabs('melting', tabList, 'renderMelting', counts)}</div>` +
+        tablePanel('Pouring Queue', rows.length, searchBox('melting', 'Search order, model or customer', 'renderMelting'),
+          dataTable(
+            [['Order', ''], ['Product / Customer', ''], ['Delivery', ''], ['Made', 'num'], ['Poured', 'num'], ['Available', 'num'], ['Progress', 'wide'], ['Status', ''], ['Actions', 'act']],
+            rows.map(meltingRow), withMolds.length ? 'No orders in this view.' : 'No molds made yet. Orders appear here once the Molding person records molds.')) +
+        tablePanel('Recent Heats', recent.length, '', heatsTable(recent, 'No heats yet.'));
+    }
+
+    function meltingRow(o) {
+      const job = jobFor(o.id);
+      const made = num(job.molds_made);
+      const poured = pouredFor(o.id);
+      const avail = availableMolds(o.id);
+      const heats = batchesFor(o.id);
+      const allDone = avail === 0 && heats.length && heats.every(b => b.status === 'Poured') && made >= num(job.molds_required);
+      return `<tr class="click" onclick="showHeats('${o.id}')">
+        ${td('Order', `<span class="mono">${esc(o.order_id)}</span>`, 'lead nowrap')}
+        ${td('Product', prodCell(o.product_image_url, o.model_name, `${o.model_id} · ${o.customer_name}`))}
+        ${td('Delivery', dueDate(o), 'nowrap')}
+        ${td('Made', made, 'num')}
+        ${td('Poured', poured, 'num')}
+        ${td('Available', `<span class="strong">${avail}</span>`, 'num')}
+        ${td('Progress', progress(poured, num(job.molds_required)))}
+        ${td('Status', `${avail ? pill('Ready to Pour', 'ReadyforPouring') : pill('All Poured', 'Poured')}<span class="sub">Molding: ${esc(job.status)}</span>`)}
+        ${td('Actions', `<div class="actions" onclick="event.stopPropagation()">
+          ${avail ? actBtn('primary', 'melting', 'New Heat', `openMeltingForm('${o.id}')`) : ''}
+          ${actBtn('ghost', 'history', `Heats (${heats.length})`, `showHeats('${o.id}')`, true)}
+          ${allDone && o.status !== 'Completed' ? actBtn('success', 'check', 'Mark Completed', `save('orders','${o.id}',{status:'Completed'},'Order marked Completed')`) : ''}
+        </div>`, 'act')}
+      </tr>`;
+    }
+
+    function meltUsage(batchId) {
+      return state.melting_usage.filter(u => u.melting_batch_id === batchId).map(u => ({ id: u.item_id, type: u.item_type, name: u.item_name, unit: u.unit_of_measurement, qty: u.qty }));
+    }
+
+    function heatActions(b) {
+      const next = HEAT_FLOW[HEAT_FLOW.indexOf(b.status) + 1];
+      return `<div class="actions" onclick="event.stopPropagation()">${b.status === 'Hold' ? actBtn('success', 'play', 'Resume', `setHeatStatus('${b.id}','Melting')`) : next ? actBtn('secondary', 'chevron', `Mark ${next}`, `setHeatStatus('${b.id}','${next}')`) : ''}${actBtn('ghost', 'edit', 'Edit heat', `openMeltingForm('${b.order_uuid}','${b.id}')`, true)}</div>`;
+    }
+    function yieldOf(b) { return num(b.melt_qty_kg) > 0 ? `${Math.round(num(b.pour_qty_kg) / num(b.melt_qty_kg) * 100)}%` : '—'; }
+
+    function heatsTable(list, emptyMsg, withOrder = true) {
+      return dataTable(
+        [['Heat No', ''], ...(withOrder ? [['Order', '']] : []), ['Date', ''], ['Furnace', ''], ['Operator', ''], ['Molds', 'num'], ['Melt kg', 'num'], ['Pour kg', 'num'], ['Yield', 'num'], ['Status', ''], ['Actions', 'act']],
+        list.map(b => {
+          const o = orderById(b.order_uuid) || {};
+          return `<tr class="click" onclick="showHeats('${b.order_uuid}')">
+            ${td('Heat No', `<span class="mono">${esc(b.heat_no)}</span>`, 'lead nowrap')}
+            ${withOrder ? td('Order', `<span class="mono">${esc(o.order_id || '—')}</span>`) : ''}
+            ${td('Date', moneyDate(b.melting_date), 'nowrap')}
+            ${td('Furnace', esc(b.furnace_no || '—'))}
+            ${td('Operator', esc(b.operator_name || '—'))}
+            ${td('Molds', `<span class="strong">${num(b.molds_poured)}</span>`, 'num')}
+            ${td('Melt kg', fmt(b.melt_qty_kg), 'num')}
+            ${td('Pour kg', fmt(b.pour_qty_kg), 'num')}
+            ${td('Yield', yieldOf(b), 'num')}
+            ${td('Status', pill(b.status))}
+            ${td('Actions', heatActions(b), 'act')}
+          </tr>`;
+        }), emptyMsg);
+    }
+
+    function heatCard(b) {
+      const usage = meltUsage(b.id);
+      return `<div class="hist"><div class="hist-top"><span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="mono">${esc(b.heat_no)}</span>${pill(b.status)}</span>${heatActions(b)}</div>
+        <div class="row-meta">${moneyDate(b.melting_date)} · Furnace ${esc(b.furnace_no || '—')} · ${esc(b.operator_name || 'Operator not set')}<br>Molds poured <b>${num(b.molds_poured)}</b> · Melt <b>${fmt(b.melt_qty_kg)} kg</b> · Pour <b>${fmt(b.pour_qty_kg)} kg</b> · Yield <b>${yieldOf(b)}</b></div>
+        <div class="row-meta"><b>Raw material</b></div>${usageChips(usage.filter(u => u.type === 'Raw Material'))}
+        <div class="row-meta"><b>Melting &amp; pouring consumables</b></div>${usageChips(usage.filter(u => u.type === 'Consumable'))}</div>`;
+    }
+
+    function showHeats(orderId) {
+      const o = orderById(orderId);
+      const job = jobFor(orderId);
+      const heats = batchesFor(orderId).sort((a, b) => b.created_at.localeCompare(a.created_at));
+      const all = heats.flatMap(b => meltUsage(b.id));
+      modal(`Heats · ${esc(o.order_id)}`, `
+        ${summary([['Molds made', num(job?.molds_made)], ['Poured', pouredFor(orderId)], ['Available', availableMolds(orderId)], ['Heats', heats.length]])}
+        <div class="section-label">Total raw material</div>${usageTable(totalsByItem(all.filter(u => u.type === 'Raw Material')), 'No raw material recorded.')}
+        <div class="section-label">Total melting &amp; pouring consumables</div>${usageTable(totalsByItem(all.filter(u => u.type === 'Consumable')), 'No consumables recorded.')}
+        <div class="section-label">Heats (${heats.length})</div>
+        <div class="list">${heats.map(heatCard).join('') || emptyState('No heats yet.')}</div>
+        <div class="form-actions" style="margin-top:16px"><button class="btn ghost" onclick="closeModal()">Close</button>${availableMolds(orderId) ? `<button class="btn primary" onclick="openMeltingForm('${orderId}')">${icon('melting', 'sm')}<span>New Heat</span></button>` : ''}</div>`);
+    }
+
+    function openMeltingForm(orderId, batchId) {
+      const o = orderById(orderId);
+      const b = state.melting_batches.find(x => x.id === batchId) || { melting_date: today(), status: 'Melting' };
+      const maxMolds = availableMolds(orderId) + num(b.molds_poured);
+      modal(`${batchId ? 'Edit Heat ' + esc(b.heat_no) : 'New Heat'} · ${esc(o.order_id)}`, `<form class="form-grid" onsubmit="saveMelting(event,'${orderId}','${batchId || ''}')">
+        ${ctxBox(o, `Molds available to pour: <b>${maxMolds}</b>`)}
+        <div class="field"><label>Heat No</label><input value="${esc(b.heat_no || 'Auto: HT-000001')}" disabled></div>
+        ${field('furnace_no', 'Furnace No', b.furnace_no, 'text')}
+        ${field('melting_date', 'Melting Date', b.melting_date, 'date', true)}
+        ${field('operator_name', 'Melting Person', b.operator_name, 'text')}
+        ${lineBlock('lines_raw', 'Raw Material Charged <span class="req">*</span>', 'raw', 'Add raw material')}
+        ${lineBlock('lines_meltcon', 'Melting & Pouring Consumables', 'meltcon', 'Add consumable')}
+        <div class="field" data-field="melt_qty_kg"><label for="melt_qty_kg">Melt Qty (kg)</label><input id="melt_qty_kg" type="number" step="0.001" min="0" value="${esc(b.melt_qty_kg ?? '')}"><div class="hint"><a href="#" onclick="event.preventDefault(); fillMeltFromRaw()">Use total of KG raw material lines</a></div></div>
+        ${field('pour_qty_kg', 'Pour Qty (kg)', b.pour_qty_kg ?? '', 'number')}
+        <div class="field" data-field="molds_poured"><label for="molds_poured">Molds Poured in this Heat <span class="req">*</span></label><input id="molds_poured" type="number" min="0" max="${maxMolds}" value="${esc(batchId ? b.molds_poured : maxMolds)}"><div class="hint">Max ${maxMolds}</div><div class="error">Molds Poured is required</div></div>
+        ${selectField('status', 'Heat Status', b.status, ['Pending', 'Melting', 'Ready for Pouring', 'Poured', 'Hold'])}
+        ${field('remarks', 'Remarks', b.remarks, 'textarea')}
+        ${formActions(batchId ? 'Update Heat' : 'Save Heat', batchId ? `<button class="btn danger" type="button" onclick="deleteHeat('${batchId}','${orderId}')">${icon('trash', 'sm')}<span>Delete Heat</span></button>` : '')}</form>`);
+      const usage = batchId ? meltUsage(batchId) : [];
+      const raw = usage.filter(u => u.type === 'Raw Material');
+      const con = usage.filter(u => u.type === 'Consumable');
+      (raw.length ? raw : [{}]).forEach(u => addLine('lines_raw', 'raw', u));
+      (con.length ? con : [{}]).forEach(u => addLine('lines_meltcon', 'meltcon', u));
+      const meltInput = document.getElementById('melt_qty_kg');
+      if (batchId) meltInput.dataset.touched = '1';
+      meltInput.addEventListener('input', () => { meltInput.dataset.touched = '1'; });
+      const rawBox = document.getElementById('lines_raw');
+      rawBox.addEventListener('input', autoMelt);
+      rawBox.addEventListener('change', autoMelt);
+    }
+
+    function rawKgTotal() {
+      let total = 0;
+      document.querySelectorAll('#lines_raw .line').forEach(row => {
+        const opt = row.querySelector('select').selectedOptions[0];
+        const unit = (opt?.dataset.unit || '').toUpperCase();
+        const q = num(row.querySelector('input').value);
+        if (unit === 'KG') total += q; else if (unit === 'TON') total += q * 1000; else if (unit === 'GRAM') total += q / 1000;
+      });
+      return total;
+    }
+    function fillMeltFromRaw() { document.getElementById('melt_qty_kg').value = fmt(rawKgTotal()); }
+    function autoMelt() { const m = document.getElementById('melt_qty_kg'); if (m && !m.dataset.touched) m.value = rawKgTotal() ? fmt(rawKgTotal()) : ''; }
+
+    async function saveMelting(event, orderId, batchId) {
+      event.preventDefault();
+      if (!validate(['melting_date', 'molds_poured'])) return;
+      const b = state.melting_batches.find(x => x.id === batchId);
+      const maxMolds = availableMolds(orderId) + num(b?.molds_poured);
+      const molds = Math.floor(num(val('molds_poured')));
+      const melt = num(val('melt_qty_kg'));
+      const pour = num(val('pour_qty_kg'));
+      if (molds > maxMolds) return toast(`Only ${maxMolds} molds are available`, true);
+      if (melt && pour > melt) return toast('Pour qty cannot be more than melt qty', true);
+      if (val('status') === 'Poured' && molds <= 0) return toast('Enter molds poured before marking Poured', true);
+      const raw = collectLines('lines_raw');
+      if (!raw) return;
+      const con = collectLines('lines_meltcon');
+      if (!con) return;
+      if (!raw.length) return toast('Add at least one raw material', true);
+      const payload = {
+        order_uuid: orderId, furnace_no: val('furnace_no') || null, melting_date: val('melting_date'), operator_name: val('operator_name') || null,
+        molds_poured: molds, melt_qty_kg: melt, pour_qty_kg: pour, status: val('status'), remarks: val('remarks') || null,
+        raw_material_id: raw[0].id, raw_material_name: raw.map(r => r.name).join(', '), raw_material_qty: raw.reduce((s, r) => s + r.qty, 0),
+        consumable_id: con[0]?.id || null, consumable_name: con.map(c => c.name).join(', ') || null, consumable_qty: con.reduce((s, c) => s + c.qty, 0)
+      };
+      try {
+        let id = batchId;
+        if (batchId) {
+          await request(`melting_batches?id=eq.${batchId}`, { method: 'PATCH', body: JSON.stringify(payload) });
+          await request(`melting_material_usage?melting_batch_id=eq.${batchId}`, { method: 'DELETE' });
+        } else {
+          const [created] = await request('melting_batches', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(payload) });
+          id = created.id;
+        }
+        const lines = [...raw, ...con].map(l => ({ melting_batch_id: id, item_type: l.type, item_id: l.id, item_name: l.name, item_category: l.cat, unit_of_measurement: l.unit, qty: l.qty }));
+        if (lines.length) await request('melting_material_usage', { method: 'POST', body: JSON.stringify(lines) });
+        closeModal();
+        await refreshAll();
+        toast(batchId ? 'Heat updated' : 'Heat saved');
+      } catch (error) { toast(error.message, true); }
+    }
+
+    async function setHeatStatus(id, status) {
+      const b = state.melting_batches.find(x => x.id === id);
+      if (status === 'Poured' && num(b.molds_poured) <= 0) return openMeltingForm(b.order_uuid, id);
+      try {
+        await request(`melting_batches?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+        await refreshAll();
+        toast(`Heat ${b.heat_no}: ${status}`);
+        if (document.getElementById('modal').classList.contains('open')) showHeats(b.order_uuid);
+      } catch (error) { toast(error.message, true); }
+    }
+
+    async function deleteHeat(id, orderId) {
+      if (!confirm('Delete this heat? Its molds will become available again.')) return;
+      try {
+        await request(`melting_batches?id=eq.${id}`, { method: 'DELETE' });
+        await refreshAll();
+        toast('Heat deleted');
+        showHeats(orderId);
+      } catch (error) { toast(error.message, true); }
+    }
+
+    document.getElementById('sideMark').innerHTML = icon('logo');
+    document.getElementById('topMark').innerHTML = icon('logo');
+    document.getElementById('btnBack').innerHTML = icon('back');
+    document.getElementById('btnRefresh').innerHTML = icon('refresh');
+    renderNav();
+    refreshAll();
+  </script>
+</body>
+</html>
