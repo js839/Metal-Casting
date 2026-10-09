@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Metal Casting ERP</title>
+  <style>
+    :root {
+      --navy: #0b1f3a;
+      --navy-2: #14345a;
+      --teal: #0ea5a4;
+      --teal-2: #0f766e;
+      --ink: #102033;
+      --muted: #64748b;
+      --line: #d9e4ee;
+      --bg: #eef3f7;
+      --panel: #ffffff;
+      --soft: #f7fafc;
+      --danger: #b42318;
+      --warn: #b25e09;
+      --success: #147a4b;
+      --radius: 14px;
+      --shadow: 0 18px 45px rgba(11, 31, 58, 0.14);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); }
+    button, input, select, textarea { font: inherit; }
+    button { border: 0; cursor: pointer; }
+    .app { min-height: 100vh; background: linear-gradient(180deg, var(--navy) 0, #102b4d 280px, var(--bg) 281px); }
+    .shell { width: min(1260px, 100%); margin: 0 auto; display: grid; grid-template-columns: 1fr; min-height: 100vh; }
+    .side { display: none; }
+    .main { padding: 16px 14px 94px; min-width: 0; }
+    .topbar { color: white; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+    .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .brandmark { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: linear-gradient(135deg, var(--teal), #67e8f9); color: var(--navy); font-weight: 900; }
+    h1, h2, h3, p { margin-top: 0; }
+    .brand h1 { font-size: 18px; line-height: 1.1; margin: 0; }
+    .brand p { color: #c8d7e8; margin: 3px 0 0; font-size: 12px; }
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+    .screen { display: none; animation: fade .16s ease; }
+    .screen.active { display: block; }
+    @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    .page-title { color: white; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .page-title h2 { margin: 0; font-size: 24px; letter-spacing: 0; }
+    .page-title p { margin: 5px 0 0; color: #c8d7e8; font-size: 13px; }
+    .btn, .icon-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 12px; font-weight: 800; min-height: 42px; padding: 0 14px; }
+    .icon-btn { width: 42px; padding: 0; color: white; background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.16); }
+    .btn.primary { background: var(--teal); color: white; box-shadow: 0 12px 24px rgba(14,165,164,.22); }
+    .btn.secondary { background: #e8f7f7; color: var(--teal-2); }
+    .btn.ghost { background: #f1f5f9; color: var(--navy); }
+    .btn.danger { background: #fee4e2; color: var(--danger); }
+    .btn.small { min-height: 34px; padding: 0 10px; border-radius: 10px; font-size: 13px; }
+    .grid { display: grid; gap: 12px; }
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .card, .panel { background: var(--panel); border: 1px solid rgba(217,228,238,.96); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .stat { padding: 15px; }
+    .stat span { color: var(--muted); font-size: 12px; font-weight: 800; text-transform: uppercase; }
+    .stat strong { display: block; margin-top: 8px; font-size: 28px; color: var(--navy); }
+    .nav-grid { grid-template-columns: 1fr; margin: 16px 0; }
+    .nav-card { text-align: left; padding: 16px; display: grid; grid-template-columns: 42px 1fr auto; align-items: center; gap: 12px; background: white; color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 8px 22px rgba(11,31,58,.08); }
+    .nav-icon, .avatar { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: #e8f7f7; color: var(--teal-2); font-weight: 900; flex: none; }
+    .nav-card h3 { margin: 0; font-size: 16px; }
+    .nav-card p { margin: 3px 0 0; color: var(--muted); font-size: 13px; }
+    .toolbar { display: grid; gap: 10px; margin-bottom: 12px; }
+    .search, .field input, .field select, .field textarea { width: 100%; border: 1px solid var(--line); background: white; color: var(--ink); border-radius: 12px; min-height: 44px; padding: 10px 12px; outline: 0; }
+    .field textarea { resize: vertical; min-height: 88px; }
+    .search:focus, .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(14,165,164,.14); }
+    .list { display: grid; gap: 10px; }
+    .row { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 12px; background: white; border: 1px solid var(--line); border-radius: var(--radius); }
+    .row:hover { border-color: rgba(14,165,164,.55); }
+    .row-main { min-width: 0; }
+    .row-title { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-weight: 900; color: var(--navy); }
+    .row-meta { margin-top: 4px; color: var(--muted); font-size: 13px; line-height: 1.35; }
+    .thumb { width: 58px; height: 58px; border-radius: 12px; object-fit: cover; background: #dbeafe; border: 1px solid #cbd5e1; display: grid; place-items: center; color: var(--navy); font-weight: 900; overflow: hidden; }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .pill { display: inline-flex; min-height: 24px; align-items: center; padding: 0 9px; border-radius: 999px; font-size: 12px; font-weight: 900; background: #e2e8f0; color: #334155; }
+    .pill.active, .pill.Completed, .pill.Delivered { background: #dcfce7; color: var(--success); }
+    .pill.Pending { background: #fef3c7; color: var(--warn); }
+    .pill.InProduction { background: #dbeafe; color: #1d4ed8; }
+    .pill.Cancelled, .pill.inactive { background: #fee4e2; color: var(--danger); }
+    .actions { display: flex; gap: 7px; flex-wrap: wrap; justify-content: flex-end; }
+    .panel { padding: 16px; margin-bottom: 14px; }
+    .form-grid { display: grid; gap: 12px; }
+    .field label { display: block; font-size: 13px; color: #334155; font-weight: 900; margin-bottom: 6px; }
+    .error { display: none; color: var(--danger); font-size: 12px; margin-top: 5px; font-weight: 700; }
+    .field.invalid .error { display: block; }
+    .field.invalid input, .field.invalid select, .field.invalid textarea { border-color: var(--danger); }
+    .form-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+    .category-grid { grid-template-columns: 1fr; }
+    .category-card { padding: 18px; text-align: left; min-height: 118px; display: flex; flex-direction: column; justify-content: space-between; background: white; border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .category-card strong { font-size: 18px; color: var(--navy); }
+    .category-card span { color: var(--muted); font-size: 13px; margin-top: 8px; }
+    .detail { display: grid; gap: 12px; }
+    .detail-kv { display: grid; grid-template-columns: 120px 1fr; gap: 8px; font-size: 14px; padding: 8px 0; border-bottom: 1px solid #edf2f7; }
+    .detail-kv span { color: var(--muted); font-weight: 800; }
+    .tabs { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 10px; }
+    .tab { white-space: nowrap; border-radius: 999px; min-height: 38px; padding: 0 13px; color: #334155; background: white; border: 1px solid var(--line); font-weight: 900; }
+    .tab.active { color: white; background: var(--navy); border-color: var(--navy); }
+    .empty, .loading, .notice { padding: 18px; text-align: center; color: var(--muted); background: white; border: 1px dashed #cbd5e1; border-radius: var(--radius); }
+    .toast { position: fixed; left: 14px; right: 14px; bottom: 82px; background: var(--navy); color: white; border-radius: 12px; padding: 12px 14px; box-shadow: var(--shadow); transform: translateY(120px); opacity: 0; transition: .2s ease; z-index: 20; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; height: 68px; display: grid; grid-template-columns: repeat(4, 1fr); background: white; border-top: 1px solid var(--line); z-index: 15; }
+    .bottom-nav button { background: transparent; color: #64748b; display: grid; place-items: center; gap: 2px; font-size: 11px; font-weight: 900; }
+    .bottom-nav button strong { font-size: 19px; line-height: 1; }
+    .bottom-nav button.active { color: var(--teal-2); }
+    .modal { position: fixed; inset: 0; display: none; place-items: end center; background: rgba(15,23,42,.52); padding: 14px; z-index: 30; }
+    .modal.open { display: grid; }
+    .modal-card { width: min(680px, 100%); max-height: 90vh; overflow: auto; background: white; border-radius: 18px; box-shadow: var(--shadow); padding: 16px; }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .modal-head h3 { margin: 0; color: var(--navy); }
+    .upload-box { display: grid; gap: 8px; grid-template-columns: 88px 1fr; align-items: center; padding: 10px; border: 1px dashed #94a3b8; border-radius: 12px; background: #f8fafc; }
+    .preview { width: 88px; height: 88px; border-radius: 12px; display: grid; place-items: center; overflow: hidden; background: #dbeafe; color: var(--navy); font-weight: 900; }
+    .preview img { width: 100%; height: 100%; object-fit: cover; }
+    .hidden { display: none !important; }
+    .desktop-only { display: none; }
+    .two-col { display: grid; gap: 12px; }
+
+    @media (min-width: 720px) {
+      .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .nav-grid, .category-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .toolbar { grid-template-columns: 1fr auto auto; align-items: center; }
+      .form-grid, .two-col { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .field.full { grid-column: 1 / -1; }
+      .modal { place-items: center; }
+    }
+
+    @media (min-width: 1020px) {
+      .shell { grid-template-columns: 260px 1fr; }
+      .side { display: block; padding: 22px 14px; color: white; }
+      .side-inner { position: sticky; top: 18px; }
+      .side-nav { display: grid; gap: 8px; margin-top: 28px; }
+      .side-nav button { text-align: left; background: transparent; color: #c8d7e8; border-radius: 12px; min-height: 44px; padding: 0 12px; font-weight: 900; }
+      .side-nav button.active { background: rgba(255,255,255,.12); color: white; }
+      .main { padding: 22px 22px 40px; }
+      .bottom-nav { display: none; }
+      .desktop-only { display: inline-flex; }
+      .stats { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+      .nav-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="shell">
+      <aside class="side">
+        <div class="side-inner">
+          <div class="brand"><div class="brandmark">MC</div><div><h1>Metal Casting ERP</h1><p>Production master data</p></div></div>
+          <nav class="side-nav" id="sideNav"></nav>
+        </div>
+      </aside>
+      <main class="main">
+        <header class="topbar">
+          <div class="brand"><div class="brandmark">MC</div><div><h1>Metal Casting ERP</h1><p id="connectionState">Connecting Supabase...</p></div></div>
+          <div class="header-actions">
+            <button class="icon-btn" onclick="refreshAll()" title="Refresh">R</button>
+            <button class="icon-btn" onclick="goBack()" title="Back">B</button>
+          </div>
+        </header>
+
+        <section id="dashboard" class="screen active"></section>
+        <section id="products" class="screen"></section>
+        <section id="raw" class="screen"></section>
+        <section id="consumables" class="screen"></section>
+        <section id="orders" class="screen"></section>
+      </main>
+    </div>
+  </div>
+
+  <nav class="bottom-nav" id="bottomNav"></nav>
+  <div class="toast" id="toast"></div>
+  <div class="modal" id="modal" role="dialog" aria-modal="true"></div>
+
+  <script>
+    const SUPABASE_URL = 'https://uzwxlbiburoxxwswyhfn.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_eslhYU3e2HirtqY6Nmi56Q_jdYeKQyK';
+    const API = `${SUPABASE_URL}/rest/v1`;
+    const headers = {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json'
+    };
+
+    const navItems = [
+      ['dashboard', 'Home', 'Dashboard'],
+      ['products', 'Product', 'Product Master'],
+      ['raw', 'Raw', 'Raw Material'],
+      ['consumables', 'Consumables', 'Consumables'],
+      ['orders', 'Orders', 'Orders']
+    ];
+    const rawCategories = ['Scrap Input', 'FE Alloy & Metal Input'];
+    const consumableCategories = ['Melting & Pouring Consumable', 'Molding & Molding Consumable'];
+    const units = ['KG', 'Ton', 'Gram', 'Litre', 'Pcs', 'Box'];
+    const orderStatuses = ['Pending', 'In Production', 'Completed', 'Delivered', 'Cancelled'];
+    const state = { page: 'dashboard', history: [], loading: true, products: [], raw_materials: [], consumables: [], orders: [], search: {}, filter: { orderStatus: 'All' }, selectedRawCategory: null, selectedConsumableCategory: null };
+
+    function request(path, options = {}) {
+      return fetch(`${API}/${path}`, { ...options, headers: { ...headers, ...(options.headers || {}) } })
+        .then(async response => {
+          const text = await response.text();
+          const data = text ? JSON.parse(text) : null;
+          if (!response.ok) throw new Error(data?.message || data?.hint || response.statusText);
+          return data;
+        });
+    }
+
+    async function refreshAll() {
+      setLoading(true);
+      try {
+        const [products, raw, consumables, orders] = await Promise.all([
+          request('products?select=*&order=created_at.desc'),
+          request('raw_materials?select=*&order=created_at.desc'),
+          request('consumables?select=*&order=created_at.desc'),
+          request('orders?select=*&order=created_at.desc')
+        ]);
+        Object.assign(state, { products, raw_materials: raw, consumables, orders });
+        document.getElementById('connectionState').textContent = 'Live Supabase data';
+        render();
+      } catch (error) {
+        document.getElementById('connectionState').textContent = 'Connection error';
+        toast(error.message, true);
+        renderError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function setLoading(value) { state.loading = value; }
+    function esc(value) { return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+    function today() { return new Date().toISOString().slice(0, 10); }
+    function moneyDate(value) { return value ? new Date(`${value}T00:00:00`).toLocaleDateString('en-IN') : 'Not set'; }
+    function statusClass(value) { return String(value || '').replace(/\s/g, ''); }
+    function toast(message, error = false) {
+      const node = document.getElementById('toast');
+      node.textContent = message;
+      node.style.background = error ? '#7f1d1d' : 'var(--navy)';
+      node.classList.add('show');
+      clearTimeout(window.toastTimer);
+      window.toastTimer = setTimeout(() => node.classList.remove('show'), 2800);
+    }
+
+    function navigate(page, opts = {}) {
+      if (!opts.replace && state.page !== page) state.history.push(state.page);
+      state.page = page;
+      document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === page));
+      renderNav();
+      render();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    function goBack() {
+      const prev = state.history.pop();
+      navigate(prev || 'dashboard', { replace: true });
+    }
+
+    function renderNav() {
+      const navHtml = navItems.map(([id, short, label]) => `<button class="${state.page === id ? 'active' : ''}" onclick="navigate('${id}')">${label}</button>`).join('');
+      document.getElementById('sideNav').innerHTML = navHtml;
+      document.getElementById('bottomNav').innerHTML = navItems.slice(0, 4).map(([id, short]) => `<button class="${state.page === id ? 'active' : ''}" onclick="navigate('${id}')"><strong>${short[0]}</strong><span>${short}</span></button>`).join('');
+    }
+
+    function header(title, subtitle, action = '') {
+      return `<div class="page-title"><div><h2>${title}</h2><p>${subtitle}</p></div><div>${action}</div></div>`;
+    }
+
+    function render() {
+      renderNav();
+      renderDashboard();
+      renderProducts();
+      renderRaw();
+      renderConsumables();
+      renderOrders();
+    }
+
+    function renderError(message) {
+      document.getElementById(state.page).innerHTML = header('Connection issue', 'Supabase request failed') + `<div class="notice">${esc(message)}</div>`;
+    }
+
+    function renderDashboard() {
+      const completed = state.orders.filter(o => o.status === 'Completed').length;
+      const pending = state.orders.filter(o => o.status === 'Pending').length;
+      const cards = [
+        ['Total Products', state.products.length],
+        ['Raw Materials', state.raw_materials.length],
+        ['Consumables', state.consumables.length],
+        ['Total Orders', state.orders.length],
+        ['Pending Orders', pending],
+        ['Completed Orders', completed]
+      ].map(([label, value]) => `<div class="card stat"><span>${label}</span><strong>${value}</strong></div>`).join('');
+      const recent = state.orders.slice(0, 5).map(orderRow).join('') || `<div class="empty">No orders yet. Place the first order from Order Management.</div>`;
+      document.getElementById('dashboard').innerHTML =
+        header('Dashboard', 'Manufacturing master data and orders') +
+        `<div class="grid stats">${cards}</div>
+         <div class="grid nav-grid">
+          ${navTile('products', 'PM', 'Product Master', 'Products, models and images')}
+          ${navTile('raw', 'RM', 'Raw Material Master', 'Scrap and FE alloy inputs')}
+          ${navTile('consumables', 'CM', 'Consumables Master', 'Melting, pouring and molding')}
+          ${navTile('orders', 'OM', 'Order Management', 'Place and track orders')}
+         </div>
+         <div class="panel"><h3>Recent Orders</h3><div class="list">${recent}</div></div>`;
+    }
+
+    function navTile(page, icon, title, sub) {
+      return `<button class="nav-card" onclick="navigate('${page}')"><span class="nav-icon">${icon}</span><span><h3>${title}</h3><p>${sub}</p></span><b>Go</b></button>`;
+    }
+
+    function productRow(p) {
+      return `<div class="row" onclick="showProductDetail('${p.id}')">
+        ${thumb(p.image_url, p.product_name)}
+        <div class="row-main"><div class="row-title">${esc(p.product_name)} <span class="pill ${p.status === 'Active' ? 'active' : 'inactive'}">${p.status}</span></div><div class="row-meta">Model ID: ${esc(p.model_id)}<br>${esc(p.description || 'No description')}</div></div>
+        <div class="actions" onclick="event.stopPropagation()"><button class="btn small ghost" onclick="openProductForm('${p.id}')">Edit</button><button class="btn small danger" onclick="deleteRow('products','${p.id}')">Delete</button></div>
+      </div>`;
+    }
+
+    function renderProducts() {
+      const q = (state.search.products || '').toLowerCase();
+      const rows = state.products.filter(p => `${p.product_name} ${p.model_id} ${p.status}`.toLowerCase().includes(q));
+      document.getElementById('products').innerHTML =
+        header('Product Master', 'Search, add, edit and manage product models', `<button class="btn primary" onclick="openProductForm()">Add Product</button>`) +
+        `<div class="toolbar"><input class="search" placeholder="Search product or model ID" value="${esc(state.search.products || '')}" oninput="state.search.products=this.value; renderProducts()"></div>
+        <div class="list">${rows.map(productRow).join('') || `<div class="empty">No product found. Add product to start order entry.</div>`}</div>`;
+    }
+
+    function renderRaw() {
+      const cat = state.selectedRawCategory;
+      if (!cat) {
+        document.getElementById('raw').innerHTML =
+          header('Raw Material Master', 'Choose one category to manage materials') +
+          `<div class="grid category-grid">${rawCategories.map(c => `<button class="category-card" onclick="state.selectedRawCategory='${c}'; renderRaw()"><strong>${c}</strong><span>${state.raw_materials.filter(x => x.category === c).length} saved materials</span></button>`).join('')}</div>`;
+        return;
+      }
+      const q = (state.search.raw || '').toLowerCase();
+      const rows = state.raw_materials.filter(r => r.category === cat && `${r.material_name} ${r.material_code} ${r.status}`.toLowerCase().includes(q));
+      document.getElementById('raw').innerHTML =
+        header(cat, 'Raw material records for this category', `<button class="btn primary" onclick="openRawForm()">Add Raw Material</button>`) +
+        `<div class="toolbar"><input class="search" placeholder="Search material name or code" value="${esc(state.search.raw || '')}" oninput="state.search.raw=this.value; renderRaw()"><button class="btn ghost" onclick="state.selectedRawCategory=null; renderRaw()">Categories</button></div>
+        <div class="list">${rows.map(materialRow).join('') || `<div class="empty">No material saved in ${esc(cat)}.</div>`}</div>`;
+    }
+
+    function materialRow(r) {
+      return `<div class="row" onclick="showRawDetail('${r.id}')"><span class="avatar">RM</span>
+        <div class="row-main"><div class="row-title">${esc(r.material_name)} <span class="pill ${r.status === 'Active' ? 'active' : 'inactive'}">${r.status}</span></div><div class="row-meta">Code: ${esc(r.material_code)} · Unit: ${esc(r.unit_of_measurement)}<br>${esc(r.description || 'No description')}</div></div>
+        <div class="actions" onclick="event.stopPropagation()"><button class="btn small ghost" onclick="openRawForm('${r.id}')">Edit</button><button class="btn small danger" onclick="deleteRow('raw_materials','${r.id}')">Delete</button></div></div>`;
+    }
+
+    function renderConsumables() {
+      const cat = state.selectedConsumableCategory;
+      if (!cat) {
+        document.getElementById('consumables').innerHTML =
+          header('Consumables Master', 'Choose one category to manage consumables') +
+          `<div class="grid category-grid">${consumableCategories.map(c => `<button class="category-card" onclick="state.selectedConsumableCategory='${c}'; renderConsumables()"><strong>${c}</strong><span>${state.consumables.filter(x => x.category === c).length} saved consumables</span></button>`).join('')}</div>`;
+        return;
+      }
+      const q = (state.search.consumables || '').toLowerCase();
+      const rows = state.consumables.filter(c => c.category === cat && `${c.consumable_name} ${c.consumable_code} ${c.status}`.toLowerCase().includes(q));
+      document.getElementById('consumables').innerHTML =
+        header(cat, 'Consumable records for this process category', `<button class="btn primary" onclick="openConsumableForm()">Add Consumable</button>`) +
+        `<div class="toolbar"><input class="search" placeholder="Search consumable name or code" value="${esc(state.search.consumables || '')}" oninput="state.search.consumables=this.value; renderConsumables()"><button class="btn ghost" onclick="state.selectedConsumableCategory=null; renderConsumables()">Categories</button></div>
+        <div class="list">${rows.map(consumableRow).join('') || `<div class="empty">No consumable saved in ${esc(cat)}.</div>`}</div>`;
+    }
+
+    function consumableRow(c) {
+      return `<div class="row" onclick="showConsumableDetail('${c.id}')"><span class="avatar">CM</span>
+        <div class="row-main"><div class="row-title">${esc(c.consumable_name)} <span class="pill ${c.status === 'Active' ? 'active' : 'inactive'}">${c.status}</span></div><div class="row-meta">Code: ${esc(c.consumable_code)} · Unit: ${esc(c.unit_of_measurement)}<br>${esc(c.description || 'No description')}</div></div>
+        <div class="actions" onclick="event.stopPropagation()"><button class="btn small ghost" onclick="openConsumableForm('${c.id}')">Edit</button><button class="btn small danger" onclick="deleteRow('consumables','${c.id}')">Delete</button></div></div>`;
+    }
+
+    function renderOrders() {
+      const q = (state.search.orders || '').toLowerCase();
+      const filter = state.filter.orderStatus;
+      const rows = state.orders.filter(o => (filter === 'All' || o.status === filter) && `${o.order_id} ${o.model_name} ${o.customer_name} ${o.model_id}`.toLowerCase().includes(q));
+      const counts = ['Total', 'Pending', 'In Production', 'Completed', 'Delivered'].map(label => {
+        const value = label === 'Total' ? state.orders.length : state.orders.filter(o => o.status === label).length;
+        return `<div class="card stat"><span>${label} Orders</span><strong>${value}</strong></div>`;
+      }).join('');
+      document.getElementById('orders').innerHTML =
+        header('Order Management', 'Place orders and track production delivery', `<button class="btn primary" onclick="openOrderForm()">Place New Order</button>`) +
+        `<div class="grid stats">${counts}</div>
+        <div class="toolbar"><input class="search" placeholder="Search order, customer or model" value="${esc(state.search.orders || '')}" oninput="state.search.orders=this.value; renderOrders()">
+        <select class="search" onchange="state.filter.orderStatus=this.value; renderOrders()">${['All', ...orderStatuses].map(s => `<option ${filter === s ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
+        <div class="list">${rows.map(orderRow).join('') || `<div class="empty">No orders match this filter.</div>`}</div>`;
+    }
+
+    function orderRow(o) {
+      return `<div class="row" onclick="showOrderDetail('${o.id}')">${thumb(o.product_image_url, o.model_name)}
+        <div class="row-main"><div class="row-title">${esc(o.order_id || 'New Order')} <span class="pill ${statusClass(o.status)}">${esc(o.status)}</span></div><div class="row-meta">${esc(o.model_name)} · ${esc(o.model_id)}<br>${esc(o.customer_name)} · Qty ${esc(o.quantity)} · Delivery ${moneyDate(o.delivery_date)}</div></div>
+        <div class="actions" onclick="event.stopPropagation()"><button class="btn small ghost" onclick="openOrderForm('${o.id}')">Edit</button><button class="btn small secondary" onclick="openStatusForm('${o.id}')">Status</button></div></div>`;
+    }
+
+    function thumb(src, label) {
+      return `<span class="thumb">${src ? `<img src="${esc(src)}" alt="">` : esc(String(label || 'MC').slice(0,2).toUpperCase())}</span>`;
+    }
+
+    function modal(title, body) {
+      document.getElementById('modal').innerHTML = `<div class="modal-card"><div class="modal-head"><h3>${title}</h3><button class="btn small ghost" onclick="closeModal()">Close</button></div>${body}</div>`;
+      document.getElementById('modal').classList.add('open');
+    }
+    function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+    function field(id, label, value = '', type = 'text', req = false) {
+      return `<div class="field ${type === 'textarea' ? 'full' : ''}" data-field="${id}"><label for="${id}">${label}${req ? ' *' : ''}</label>${type === 'textarea' ? `<textarea id="${id}">${esc(value)}</textarea>` : `<input id="${id}" type="${type}" value="${esc(value)}">`}<div class="error">${label} is required</div></div>`;
+    }
+    function selectField(id, label, value, options, req = false) {
+      return `<div class="field" data-field="${id}"><label for="${id}">${label}${req ? ' *' : ''}</label><select id="${id}">${options.map(o => `<option value="${esc(o)}" ${value === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select><div class="error">${label} is required</div></div>`;
+    }
+    function validate(ids) {
+      let ok = true;
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        const wrap = document.querySelector(`[data-field="${id}"]`);
+        const invalid = !String(el.value || '').trim();
+        wrap?.classList.toggle('invalid', invalid);
+        if (invalid) ok = false;
+      });
+      return ok;
+    }
+
+    function imageUpload(current = '') {
+      return `<div class="field full"><label>Product Image</label><div class="upload-box"><div class="preview" id="imagePreview">${current ? `<img src="${esc(current)}" alt="">` : 'IMG'}</div><div><input id="imageFile" type="file" accept="image/*" capture="environment" onchange="previewImage(event)"><input id="imageUrl" class="search" placeholder="Or paste image URL" value="${esc(current)}" oninput="setPreview(this.value)" style="margin-top:8px"></div></div></div>`;
+    }
+    function previewImage(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => { document.getElementById('imageUrl').value = reader.result; setPreview(reader.result); };
+      reader.readAsDataURL(file);
+    }
+    function setPreview(src) { document.getElementById('imagePreview').innerHTML = src ? `<img src="${esc(src)}" alt="">` : 'IMG'; }
+
+    function openProductForm(id) {
+      const p = state.products.find(x => x.id === id) || {};
+      modal(id ? 'Edit Product' : 'Add Product', `<form class="form-grid" onsubmit="saveProduct(event,'${id || ''}')">
+        ${imageUpload(p.image_url || '')}
+        ${field('product_name', 'Product Name', p.product_name, 'text', true)}
+        ${field('model_id', 'Model ID', p.model_id, 'text', true)}
+        ${selectField('status', 'Status', p.status || 'Active', ['Active', 'Inactive'])}
+        ${field('description', 'Product Description', p.description, 'textarea')}
+        <div class="form-actions field full"><button class="btn primary" type="submit">Save Product</button><button class="btn ghost" type="button" onclick="closeModal()">Cancel</button></div></form>`);
+    }
+    async function saveProduct(event, id) {
+      event.preventDefault();
+      if (!validate(['product_name', 'model_id'])) return;
+      const payload = { product_name: val('product_name'), model_id: val('model_id'), description: val('description'), status: val('status'), image_url: val('imageUrl') || null };
+      await save('products', id, payload, 'Product saved');
+    }
+
+    function openRawForm(id) {
+      const r = state.raw_materials.find(x => x.id === id) || { category: state.selectedRawCategory };
+      modal(id ? 'Edit Raw Material' : 'Add Raw Material', `<form class="form-grid" onsubmit="saveRaw(event,'${id || ''}')">
+        ${selectField('category', 'Material Category', r.category || state.selectedRawCategory || rawCategories[0], rawCategories, true)}
+        ${field('material_name', 'Material Name', r.material_name, 'text', true)}
+        ${field('material_code', 'Material Code', r.material_code, 'text', true)}
+        ${selectField('unit_of_measurement', 'Unit of Measurement', r.unit_of_measurement || 'KG', units, true)}
+        ${selectField('status', 'Status', r.status || 'Active', ['Active', 'Inactive'])}
+        ${field('description', 'Description', r.description, 'textarea')}
+        <div class="form-actions field full"><button class="btn primary" type="submit">Save Material</button><button class="btn ghost" type="button" onclick="closeModal()">Cancel</button></div></form>`);
+    }
+    async function saveRaw(event, id) {
+      event.preventDefault();
+      if (!validate(['category', 'material_name', 'material_code', 'unit_of_measurement'])) return;
+      await save('raw_materials', id, { category: val('category'), material_name: val('material_name'), material_code: val('material_code'), unit_of_measurement: val('unit_of_measurement'), description: val('description'), status: val('status') }, 'Raw material saved');
+      state.selectedRawCategory = val('category');
+    }
+
+    function openConsumableForm(id) {
+      const c = state.consumables.find(x => x.id === id) || { category: state.selectedConsumableCategory };
+      modal(id ? 'Edit Consumable' : 'Add Consumable', `<form class="form-grid" onsubmit="saveConsumable(event,'${id || ''}')">
+        ${selectField('category', 'Consumable Category', c.category || state.selectedConsumableCategory || consumableCategories[0], consumableCategories, true)}
+        ${field('consumable_name', 'Consumable Name', c.consumable_name, 'text', true)}
+        ${field('consumable_code', 'Consumable Code', c.consumable_code, 'text', true)}
+        ${selectField('unit_of_measurement', 'Unit of Measurement', c.unit_of_measurement || 'KG', units, true)}
+        ${selectField('status', 'Status', c.status || 'Active', ['Active', 'Inactive'])}
+        ${field('description', 'Description', c.description, 'textarea')}
+        <div class="form-actions field full"><button class="btn primary" type="submit">Save Consumable</button><button class="btn ghost" type="button" onclick="closeModal()">Cancel</button></div></form>`);
+    }
+    async function saveConsumable(event, id) {
+      event.preventDefault();
+      if (!validate(['category', 'consumable_name', 'consumable_code', 'unit_of_measurement'])) return;
+      await save('consumables', id, { category: val('category'), consumable_name: val('consumable_name'), consumable_code: val('consumable_code'), unit_of_measurement: val('unit_of_measurement'), description: val('description'), status: val('status') }, 'Consumable saved');
+      state.selectedConsumableCategory = val('category');
+    }
+
+    function openOrderForm(id) {
+      const o = state.orders.find(x => x.id === id) || { order_date: today(), status: 'Pending' };
+      const productOptions = state.products.map(p => `<option value="${p.id}" ${o.product_id === p.id ? 'selected' : ''}>${esc(p.product_name)} (${esc(p.model_id)})</option>`).join('');
+      modal(id ? 'Edit Order' : 'Place New Order', `<form class="form-grid" onsubmit="saveOrder(event,'${id || ''}')">
+        <div class="field"><label>Order ID</label><input value="${esc(o.order_id || 'Auto: ORD-000001')}" disabled></div>
+        <div class="field" data-field="product_id"><label>Model Name *</label><select id="product_id" onchange="syncProductFields()"><option value="">Select product</option>${productOptions}</select><div class="error">Model Name is required</div></div>
+        ${field('model_id_auto', 'Model ID', o.model_id || '', 'text', true)}
+        <div class="field"><label>Product Image</label><div class="preview" id="orderImage">${o.product_image_url ? `<img src="${esc(o.product_image_url)}" alt="">` : 'IMG'}</div></div>
+        ${field('customer_name', 'Customer Name', o.customer_name, 'text', true)}
+        ${field('customer_mobile', 'Customer Mobile Number', o.customer_mobile, 'tel')}
+        ${field('order_date', 'Order Date', o.order_date || today(), 'date', true)}
+        ${field('delivery_date', 'Delivery Date', o.delivery_date, 'date')}
+        ${field('quantity', 'Quantity', o.quantity || 1, 'number', true)}
+        ${selectField('status', 'Order Status', o.status || 'Pending', orderStatuses)}
+        ${field('remarks', 'Remarks', o.remarks, 'textarea')}
+        <div class="form-actions field full"><button class="btn primary" type="submit">Submit Order</button><button class="btn ghost" type="button" onclick="closeModal()">Cancel</button></div></form>`);
+      syncProductFields();
+    }
+    function syncProductFields() {
+      const p = state.products.find(x => x.id === val('product_id'));
+      const model = document.getElementById('model_id_auto');
+      const image = document.getElementById('orderImage');
+      if (p && model) model.value = p.model_id;
+      if (image) image.innerHTML = p?.image_url ? `<img src="${esc(p.image_url)}" alt="">` : 'IMG';
+    }
+    async function saveOrder(event, id) {
+      event.preventDefault();
+      if (!validate(['product_id', 'model_id_auto', 'customer_name', 'order_date', 'quantity'])) return;
+      const p = state.products.find(x => x.id === val('product_id'));
+      const payload = { product_id: p.id, model_name: p.product_name, model_id: p.model_id, product_image_url: p.image_url, customer_name: val('customer_name'), customer_mobile: val('customer_mobile'), order_date: val('order_date'), delivery_date: val('delivery_date') || null, quantity: Number(val('quantity')), remarks: val('remarks'), status: val('status') || 'Pending' };
+      await save('orders', id, payload, 'Order saved');
+    }
+
+    function openStatusForm(id) {
+      const o = state.orders.find(x => x.id === id);
+      modal('Update Order Status', `<form class="form-grid" onsubmit="saveStatus(event,'${id}')">${selectField('status', 'Order Status', o.status, orderStatuses)}<div class="form-actions field full"><button class="btn primary" type="submit">Update Status</button><button class="btn ghost" type="button" onclick="closeModal()">Cancel</button></div></form>`);
+    }
+    async function saveStatus(event, id) { event.preventDefault(); await save('orders', id, { status: val('status') }, 'Status updated'); }
+
+    function val(id) { return document.getElementById(id)?.value?.trim() || ''; }
+    async function save(table, id, payload, message) {
+      try {
+        if (id) await request(`${table}?id=eq.${id}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(payload) });
+        else await request(table, { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(payload) });
+        closeModal();
+        await refreshAll();
+        toast(message);
+      } catch (error) { toast(error.message, true); }
+    }
+    async function deleteRow(table, id) {
+      if (!confirm('Delete this record?')) return;
+      try {
+        await request(`${table}?id=eq.${id}`, { method: 'DELETE' });
+        await refreshAll();
+        toast('Record deleted');
+      } catch (error) { toast(error.message, true); }
+    }
+
+    function details(title, rows, actions = '') {
+      modal(title, `<div class="detail">${rows.map(([k,v]) => `<div class="detail-kv"><span>${esc(k)}</span><strong>${v || '-'}</strong></div>`).join('')}</div><div class="form-actions">${actions}</div>`);
+    }
+    function showProductDetail(id) {
+      const p = state.products.find(x => x.id === id);
+      details('Product Details', [['Image', thumb(p.image_url, p.product_name)], ['Product Name', esc(p.product_name)], ['Model ID', esc(p.model_id)], ['Status', esc(p.status)], ['Description', esc(p.description || '-')]], `<button class="btn primary" onclick="openProductForm('${id}')">Edit Product</button><button class="btn danger" onclick="deleteRow('products','${id}')">Delete</button>`);
+    }
+    function showRawDetail(id) {
+      const r = state.raw_materials.find(x => x.id === id);
+      details('Raw Material Details', [['Category', esc(r.category)], ['Material Name', esc(r.material_name)], ['Material Code', esc(r.material_code)], ['Unit', esc(r.unit_of_measurement)], ['Status', esc(r.status)], ['Description', esc(r.description || '-')]], `<button class="btn primary" onclick="openRawForm('${id}')">Edit Material</button><button class="btn danger" onclick="deleteRow('raw_materials','${id}')">Delete</button>`);
+    }
+    function showConsumableDetail(id) {
+      const c = state.consumables.find(x => x.id === id);
+      details('Consumable Details', [['Category', esc(c.category)], ['Consumable Name', esc(c.consumable_name)], ['Consumable Code', esc(c.consumable_code)], ['Unit', esc(c.unit_of_measurement)], ['Status', esc(c.status)], ['Description', esc(c.description || '-')]], `<button class="btn primary" onclick="openConsumableForm('${id}')">Edit Consumable</button><button class="btn danger" onclick="deleteRow('consumables','${id}')">Delete</button>`);
+    }
+    function showOrderDetail(id) {
+      const o = state.orders.find(x => x.id === id);
+      details('Order Details', [['Product', thumb(o.product_image_url, o.model_name)], ['Order ID', esc(o.order_id)], ['Model Name', esc(o.model_name)], ['Model ID', esc(o.model_id)], ['Customer', esc(o.customer_name)], ['Mobile', esc(o.customer_mobile || '-')], ['Quantity', esc(o.quantity)], ['Order Date', moneyDate(o.order_date)], ['Delivery Date', moneyDate(o.delivery_date)], ['Status', esc(o.status)], ['Remarks', esc(o.remarks || '-')]], `<button class="btn primary" onclick="openOrderForm('${id}')">Edit Order</button><button class="btn secondary" onclick="openStatusForm('${id}')">Update Status</button><button class="btn danger" onclick="save('orders','${id}',{status:'Cancelled'},'Order cancelled')">Cancel Order</button>`);
+    }
+
+    renderNav();
+    refreshAll();
+  </script>
+</body>
+</html>

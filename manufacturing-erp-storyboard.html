@@ -1,0 +1,1751 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Manufacturing ERP Storyboard</title>
+  <style>
+    :root {
+      --navy: #0b1f3a;
+      --navy-2: #122b4a;
+      --teal: #0aa6a6;
+      --teal-dark: #087f86;
+      --ink: #102033;
+      --muted: #607086;
+      --line: #d9e2ec;
+      --surface: #ffffff;
+      --soft: #f4f7fb;
+      --soft-2: #eaf7f7;
+      --danger: #c2413b;
+      --warn: #c47a12;
+      --success: #1b8754;
+      --shadow: 0 18px 50px rgba(10, 31, 58, 0.12);
+      --radius: 14px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #eef3f8;
+      color: var(--ink);
+    }
+
+    button, input, textarea, select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr;
+      background:
+        linear-gradient(180deg, rgba(11, 31, 58, 0.96), rgba(11, 31, 58, 0.9) 260px, #eef3f8 261px);
+    }
+
+    .shell {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr;
+      min-height: 100vh;
+    }
+
+    .side {
+      display: none;
+    }
+
+    .main {
+      min-width: 0;
+      padding: 18px 14px 92px;
+    }
+
+    .topbar {
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--teal), #6ee7d8);
+      display: grid;
+      place-items: center;
+      color: var(--navy);
+      font-weight: 900;
+      flex: none;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 3px 0 0;
+      color: #b7c7da;
+      font-size: 12px;
+    }
+
+    .icon-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,0.12);
+      color: white;
+    }
+
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    .hero-panel, .panel, .list-card, .form-panel {
+      background: var(--surface);
+      border: 1px solid rgba(217, 226, 236, 0.85);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-panel {
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .hero-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    h2, h3 {
+      margin: 0;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      font-size: 24px;
+      color: var(--navy);
+    }
+
+    h3 {
+      font-size: 16px;
+      color: var(--navy);
+    }
+
+    .subtle {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .stat {
+      padding: 14px;
+      border-radius: 12px;
+      background: var(--soft);
+      border: 1px solid var(--line);
+      min-height: 90px;
+    }
+
+    .stat .value {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--navy);
+      margin-top: 8px;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .nav-grid {
+      grid-template-columns: 1fr;
+      margin-bottom: 16px;
+    }
+
+    .nav-card {
+      border-radius: 14px;
+      padding: 16px;
+      background: #fff;
+      border: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: 44px 1fr auto;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+      color: var(--ink);
+      box-shadow: 0 8px 28px rgba(10,31,58,0.06);
+    }
+
+    .nav-card:hover {
+      border-color: rgba(10, 166, 166, 0.45);
+    }
+
+    .nav-icon, .row-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--soft-2);
+      color: var(--teal-dark);
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+    }
+
+    .arrow {
+      color: var(--muted);
+      font-size: 22px;
+    }
+
+    .panel {
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .toolbar {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .search {
+      position: relative;
+    }
+
+    .search input {
+      width: 100%;
+      height: 44px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      padding: 0 14px 0 40px;
+      background: var(--soft);
+      color: var(--ink);
+      outline: 0;
+    }
+
+    .search:before {
+      content: "⌕";
+      position: absolute;
+      left: 16px;
+      top: 9px;
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .filters {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .chip {
+      white-space: nowrap;
+      height: 36px;
+      padding: 0 13px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .chip.active {
+      background: var(--navy);
+      color: white;
+      border-color: var(--navy);
+    }
+
+    .primary, .secondary, .danger, .ghost {
+      height: 42px;
+      padding: 0 15px;
+      border-radius: 12px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-width: fit-content;
+    }
+
+    .primary {
+      background: var(--teal);
+      color: white;
+    }
+
+    .secondary {
+      background: var(--navy);
+      color: white;
+    }
+
+    .danger {
+      background: #fff1f0;
+      color: var(--danger);
+      border: 1px solid #ffd2ce;
+    }
+
+    .ghost {
+      background: var(--soft);
+      color: var(--navy);
+      border: 1px solid var(--line);
+    }
+
+    .list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .list-card {
+      border-radius: 14px;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 54px 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .thumb {
+      width: 54px;
+      height: 54px;
+      border-radius: 12px;
+      object-fit: cover;
+      background: linear-gradient(135deg, #dbe7f3, #eef9f7);
+      display: grid;
+      place-items: center;
+      color: var(--navy);
+      font-weight: 900;
+      overflow: hidden;
+    }
+
+    .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .row-main {
+      min-width: 0;
+    }
+
+    .row-title {
+      font-weight: 850;
+      color: var(--navy);
+      overflow-wrap: anywhere;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 5px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      height: 24px;
+      padding: 0 9px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 12px;
+    }
+
+    .badge.active, .badge.completed, .badge.delivered {
+      background: #e8f7ef;
+      color: var(--success);
+    }
+
+    .badge.pending {
+      background: #fff7e8;
+      color: var(--warn);
+    }
+
+    .badge.production {
+      background: #eaf2ff;
+      color: #2463a6;
+    }
+
+    .badge.inactive, .badge.cancelled {
+      background: #fff0f0;
+      color: var(--danger);
+    }
+
+    .row-actions {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      border-top: 1px solid var(--line);
+      padding-top: 10px;
+    }
+
+    .small-btn {
+      height: 34px;
+      padding: 0 11px;
+      border-radius: 10px;
+      background: var(--soft);
+      color: var(--navy);
+      font-weight: 800;
+      border: 1px solid var(--line);
+    }
+
+    .small-btn.danger-text {
+      color: var(--danger);
+      background: #fff7f6;
+      border-color: #ffd8d4;
+    }
+
+    .empty {
+      padding: 28px 18px;
+      border: 1px dashed #b7c7da;
+      border-radius: 14px;
+      text-align: center;
+      color: var(--muted);
+      background: #fbfdff;
+    }
+
+    .empty strong {
+      color: var(--navy);
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .category-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .category-card {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: white;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 46px 1fr auto;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+    }
+
+    .form-panel {
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .field label {
+      font-weight: 800;
+      color: var(--navy);
+      font-size: 13px;
+    }
+
+    .required {
+      color: var(--danger);
+    }
+
+    .field input, .field textarea, .field select {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      min-height: 46px;
+      padding: 11px 12px;
+      outline: 0;
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .field textarea {
+      min-height: 96px;
+      resize: vertical;
+    }
+
+    .field input:focus, .field textarea:focus, .field select:focus {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 4px rgba(10, 166, 166, 0.12);
+    }
+
+    .error-text {
+      color: var(--danger);
+      font-size: 12px;
+      min-height: 16px;
+    }
+
+    .upload {
+      border: 1px dashed #9bb3c7;
+      background: #f8fbfe;
+      border-radius: 14px;
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 76px 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .upload-preview {
+      width: 76px;
+      height: 76px;
+      border-radius: 14px;
+      background: var(--soft-2);
+      display: grid;
+      place-items: center;
+      color: var(--teal-dark);
+      font-weight: 900;
+      overflow: hidden;
+    }
+
+    .upload-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .form-actions {
+      position: sticky;
+      bottom: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      background: linear-gradient(180deg, rgba(255,255,255,0), #fff 18px);
+      padding-top: 22px;
+      margin-top: 8px;
+    }
+
+    .detail-hero {
+      display: grid;
+      gap: 14px;
+    }
+
+    .detail-img {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #d8e5f2, #ecfbf9);
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      color: var(--navy);
+      font-size: 34px;
+      font-weight: 900;
+    }
+
+    .detail-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .kv {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .kv-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 10px;
+    }
+
+    .kv-row span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .kv-row strong {
+      color: var(--navy);
+      text-align: right;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: white;
+      border-top: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      z-index: 20;
+      box-shadow: 0 -12px 30px rgba(10,31,58,0.08);
+    }
+
+    .bottom-nav button {
+      height: 68px;
+      background: white;
+      color: var(--muted);
+      display: grid;
+      place-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .bottom-nav .active {
+      color: var(--teal-dark);
+    }
+
+    .nav-symbol {
+      font-size: 18px;
+      line-height: 1;
+      font-weight: 900;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(11, 31, 58, 0.54);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 16px;
+      z-index: 30;
+    }
+
+    .modal.open {
+      display: flex;
+    }
+
+    .modal-card {
+      width: min(640px, 100%);
+      max-height: calc(100vh - 34px);
+      overflow: auto;
+      background: white;
+      border-radius: 20px;
+      padding: 18px;
+      box-shadow: 0 24px 70px rgba(0,0,0,0.26);
+    }
+
+    .toast {
+      position: fixed;
+      left: 14px;
+      right: 14px;
+      bottom: 82px;
+      background: var(--navy);
+      color: white;
+      border-radius: 14px;
+      padding: 13px 14px;
+      box-shadow: var(--shadow);
+      z-index: 40;
+      display: none;
+      font-weight: 750;
+    }
+
+    .toast.show {
+      display: block;
+    }
+
+    .loading {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-weight: 700;
+      padding: 12px;
+    }
+
+    .loading.show { display: flex; }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 3px solid #dbe7f3;
+      border-top-color: var(--teal);
+      border-radius: 999px;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (min-width: 760px) {
+      .shell {
+        grid-template-columns: 250px 1fr;
+        gap: 0;
+      }
+
+      .side {
+        display: block;
+        min-height: 100vh;
+        padding: 22px 14px;
+        color: white;
+      }
+
+      .side-panel {
+        position: sticky;
+        top: 20px;
+      }
+
+      .side-menu {
+        display: grid;
+        gap: 8px;
+        margin-top: 28px;
+      }
+
+      .side-menu button {
+        height: 44px;
+        border-radius: 12px;
+        background: transparent;
+        color: #bed0e3;
+        text-align: left;
+        padding: 0 12px;
+        font-weight: 800;
+      }
+
+      .side-menu button.active, .side-menu button:hover {
+        background: rgba(255,255,255,0.12);
+        color: white;
+      }
+
+      .main {
+        padding: 24px 24px 42px;
+      }
+
+      .bottom-nav {
+        display: none;
+      }
+
+      .stats {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .nav-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .toolbar {
+        grid-template-columns: 1fr auto;
+        align-items: center;
+      }
+
+      .list-card {
+        grid-template-columns: 58px 1fr auto;
+      }
+
+      .row-actions {
+        grid-column: auto;
+        border-top: 0;
+        padding-top: 0;
+      }
+
+      .category-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .form-grid.two {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .detail-hero {
+        grid-template-columns: 300px 1fr;
+      }
+
+      .modal {
+        align-items: center;
+      }
+
+      .toast {
+        left: auto;
+        right: 24px;
+        bottom: 24px;
+        width: min(420px, calc(100vw - 48px));
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="shell">
+      <aside class="side">
+        <div class="side-panel">
+          <div class="brand">
+            <div class="brand-mark">DB</div>
+            <div>
+              <h1>Data Bridge ERP</h1>
+              <p>Manufacturing Control</p>
+            </div>
+          </div>
+          <nav class="side-menu" id="sideMenu"></nav>
+        </div>
+      </aside>
+      <main class="main">
+        <header class="topbar">
+          <div class="brand">
+            <div class="brand-mark">DB</div>
+            <div>
+              <h1>Data Bridge ERP</h1>
+              <p id="screenSubtitle">Manufacturing Product and Order Management</p>
+            </div>
+          </div>
+          <button class="icon-btn" title="Notifications" type="button">!</button>
+        </header>
+
+        <section class="screen active" id="dashboardScreen">
+          <div class="hero-panel">
+            <div class="hero-title">
+              <div>
+                <h2>Dashboard</h2>
+                <p class="subtle">Live preview of master data, orders, pending work, and completed dispatches.</p>
+              </div>
+              <button class="primary" type="button" data-go="orderFormScreen">+ Order</button>
+            </div>
+            <div class="grid stats" id="dashboardStats"></div>
+          </div>
+
+          <div class="grid nav-grid">
+            <button class="nav-card" type="button" data-go="productsScreen">
+              <span class="nav-icon">P</span><span><strong>Product Master</strong><small class="subtle">Images, model IDs, active status</small></span><span class="arrow">›</span>
+            </button>
+            <button class="nav-card" type="button" data-go="rawScreen">
+              <span class="nav-icon">R</span><span><strong>Raw Material Master</strong><small class="subtle">Scrap Input, FE Alloy and Metals</small></span><span class="arrow">›</span>
+            </button>
+            <button class="nav-card" type="button" data-go="consumablesScreen">
+              <span class="nav-icon">C</span><span><strong>Consumables Master</strong><small class="subtle">Melting, pouring, molding inputs</small></span><span class="arrow">›</span>
+            </button>
+            <button class="nav-card" type="button" data-go="ordersScreen">
+              <span class="nav-icon">O</span><span><strong>Order Management</strong><small class="subtle">Customer orders and delivery tracking</small></span><span class="arrow">›</span>
+            </button>
+          </div>
+
+          <div class="panel">
+            <div class="section-head">
+              <h3>Recent Orders</h3>
+              <button class="ghost" type="button" data-go="ordersScreen">View All</button>
+            </div>
+            <div class="list" id="recentOrders"></div>
+          </div>
+        </section>
+
+        <section class="screen" id="productsScreen">
+          <div class="hero-panel">
+            <div class="hero-title">
+              <div>
+                <h2>Product Master</h2>
+                <p class="subtle">Searchable product list with upload preview, unique model ID validation, and active/inactive status.</p>
+              </div>
+              <button class="primary" type="button" id="addProductBtn">+ Product</button>
+            </div>
+            <div class="toolbar">
+              <div class="search"><input id="productSearch" placeholder="Search product or model ID"></div>
+            </div>
+            <div class="loading" id="productLoading"><span class="spinner"></span> Loading products...</div>
+            <div class="list" id="productList"></div>
+          </div>
+        </section>
+
+        <section class="screen" id="rawScreen">
+          <div class="hero-panel">
+            <div class="hero-title">
+              <div>
+                <h2>Raw Material Master</h2>
+                <p class="subtle">Exactly two master categories with dedicated material management pages.</p>
+              </div>
+            </div>
+            <div class="category-list">
+              <button class="category-card" type="button" data-material-type="raw" data-category="Scrap Input">
+                <span class="row-icon">S</span><span><strong>Scrap Input</strong><small class="subtle">Scrap and furnace input materials</small></span><span class="arrow">›</span>
+              </button>
+              <button class="category-card" type="button" data-material-type="raw" data-category="FE Alloy and Metals">
+                <span class="row-icon">F</span><span><strong>FE Alloy and Metals</strong><small class="subtle">Metals, alloys, and charge mix inputs</small></span><span class="arrow">›</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen" id="consumablesScreen">
+          <div class="hero-panel">
+            <div class="hero-title">
+              <div>
+                <h2>Consumables Master</h2>
+                <p class="subtle">Exactly two categories with separate management pages and searchable consumable records.</p>
+              </div>
+            </div>
+            <div class="category-list">
+              <button class="category-card" type="button" data-material-type="consumable" data-category="Melting and Pouring">
+                <span class="row-icon">M</span><span><strong>Melting and Pouring</strong><small class="subtle">Flux, sleeves, pouring consumables</small></span><span class="arrow">›</span>
+              </button>
+              <button class="category-card" type="button" data-material-type="consumable" data-category="Molding and Molding">
+                <span class="row-icon">D</span><span><strong>Molding and Molding</strong><small class="subtle">Molding inputs and shop-floor supplies</small></span><span class="arrow">›</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen" id="materialManageScreen">
+          <div class="hero-panel">
+            <div class="hero-title">
+              <div>
+                <h2 id="materialTitle">Material Category</h2>
+                <p class="subtle" id="materialSubtitle">Manage category records.</p>
+              </div>
+              <button class="primary" type="button" id="addMaterialBtn">+ Add</button>
+            </div>
+            <div class="toolbar">
+              <div class="search"><input id="materialSearch" placeholder="Search name or code"></div>
+            </div>
+            <div class="list" id="materialList"></div>
+          </div>
+        </section>
+
+        <section class="screen" id="ordersScreen">
+          <div class="hero-panel">
+            <div class="hero-title">
+              <div>
+                <h2>Order Management</h2>
+                <p class="subtle">Dynamic order list with delivery date, filters, and status tracking.</p>
+              </div>
+              <button class="primary" type="button" data-go="orderFormScreen">+ Place New Order</button>
+            </div>
+            <div class="grid stats" id="orderStats"></div>
+          </div>
+          <div class="panel">
+            <div class="toolbar">
+              <div class="search"><input id="orderSearch" placeholder="Search order, customer, or model"></div>
+              <div class="filters" id="orderFilters"></div>
+            </div>
+            <div class="list" id="orderList"></div>
+          </div>
+        </section>
+
+        <section class="screen" id="orderFormScreen">
+          <div class="form-panel">
+            <div class="section-head">
+              <div>
+                <h2>Place New Order</h2>
+                <p class="subtle">Order ID is generated automatically in ORD-000001 format.</p>
+              </div>
+            </div>
+            <form id="orderForm" class="form-grid two" novalidate>
+              <div class="field">
+                <label>Order ID</label>
+                <input name="orderId" readonly>
+                <div class="error-text"></div>
+              </div>
+              <div class="field">
+                <label>Model Name <span class="required">*</span></label>
+                <select name="productId" required></select>
+                <div class="error-text"></div>
+              </div>
+              <div class="field">
+                <label>Model ID</label>
+                <input name="modelId" readonly>
+                <div class="error-text"></div>
+              </div>
+              <div class="field">
+                <label>Customer Name <span class="required">*</span></label>
+                <input name="customer" required placeholder="Enter customer name">
+                <div class="error-text"></div>
+              </div>
+              <div class="field">
+                <label>Customer Mobile Number</label>
+                <input name="mobile" inputmode="tel" placeholder="Enter mobile number">
+                <div class="error-text"></div>
+              </div>
+              <div class="field">
+                <label>Order Date</label>
+                <input name="orderDate" type="date">
+                <div class="error-text"></div>
+              </div>
+              <div class="field">
+                <label>Delivery Date <span class="required">*</span></label>
+                <input name="deliveryDate" type="date" required>
+                <div class="error-text"></div>
+              </div>
+              <div class="field">
+                <label>Quantity <span class="required">*</span></label>
+                <input name="quantity" type="number" min="1" required placeholder="0">
+                <div class="error-text"></div>
+              </div>
+              <div class="field">
+                <label>Order Status</label>
+                <select name="status">
+                  <option>Pending</option>
+                  <option>In Production</option>
+                  <option>Completed</option>
+                  <option>Delivered</option>
+                </select>
+                <div class="error-text"></div>
+              </div>
+              <div class="field">
+                <label>Product Image</label>
+                <div class="upload">
+                  <div class="upload-preview" id="orderProductPreview">IMG</div>
+                  <div>
+                    <strong id="orderProductName">Select model name</strong>
+                    <p class="subtle">Product image appears from Product Master.</p>
+                  </div>
+                </div>
+                <div class="error-text"></div>
+              </div>
+              <div class="field" style="grid-column: 1 / -1;">
+                <label>Remarks</label>
+                <textarea name="remarks" placeholder="Production notes, delivery instructions, or internal remarks"></textarea>
+                <div class="error-text"></div>
+              </div>
+              <div class="form-actions" style="grid-column: 1 / -1;">
+                <button class="ghost" type="button" data-go="ordersScreen">Cancel</button>
+                <button class="primary" type="submit">Submit Order</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <section class="screen" id="orderDetailScreen">
+          <div class="hero-panel">
+            <div class="section-head">
+              <div>
+                <h2>Order Details</h2>
+                <p class="subtle">Detailed order overview and operational actions.</p>
+              </div>
+              <button class="ghost" type="button" data-go="ordersScreen">Back</button>
+            </div>
+            <div id="orderDetail"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <nav class="bottom-nav" id="bottomNav"></nav>
+
+  <div class="modal" id="productModal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="section-head">
+        <h2 id="productModalTitle">Add Product</h2>
+        <button class="icon-btn" style="background:var(--soft);color:var(--navy)" type="button" data-close="productModal">x</button>
+      </div>
+      <form id="productForm" class="form-grid" novalidate>
+        <input type="hidden" name="id">
+        <div class="field">
+          <label>Product Image</label>
+          <div class="upload">
+            <div class="upload-preview" id="productPreview">IMG</div>
+            <div>
+              <strong>Camera or gallery selection</strong>
+              <p class="subtle">Choose an image to preview before saving.</p>
+              <input name="image" type="file" accept="image/*">
+            </div>
+          </div>
+          <div class="error-text"></div>
+        </div>
+        <div class="field">
+          <label>Product Name <span class="required">*</span></label>
+          <input name="name" required placeholder="Enter product name">
+          <div class="error-text"></div>
+        </div>
+        <div class="field">
+          <label>Model ID <span class="required">*</span></label>
+          <input name="modelId" required placeholder="Unique model ID">
+          <div class="error-text"></div>
+        </div>
+        <div class="field">
+          <label>Product Description</label>
+          <textarea name="description" placeholder="Enter product description"></textarea>
+          <div class="error-text"></div>
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <select name="status">
+            <option>Active</option>
+            <option>Inactive</option>
+          </select>
+          <div class="error-text"></div>
+        </div>
+        <div class="form-actions">
+          <button class="ghost" type="button" data-close="productModal">Cancel</button>
+          <button class="primary" type="submit">Save Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal" id="materialModal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="section-head">
+        <h2 id="materialModalTitle">Add Raw Material</h2>
+        <button class="icon-btn" style="background:var(--soft);color:var(--navy)" type="button" data-close="materialModal">x</button>
+      </div>
+      <form id="materialForm" class="form-grid" novalidate>
+        <input type="hidden" name="id">
+        <input type="hidden" name="type">
+        <div class="field">
+          <label id="materialCategoryLabel">Material Category</label>
+          <input name="category" readonly>
+          <div class="error-text"></div>
+        </div>
+        <div class="field">
+          <label id="materialNameLabel">Material Name <span class="required">*</span></label>
+          <input name="name" required placeholder="Enter name">
+          <div class="error-text"></div>
+        </div>
+        <div class="field">
+          <label id="materialCodeLabel">Material Code <span class="required">*</span></label>
+          <input name="code" required placeholder="Enter code">
+          <div class="error-text"></div>
+        </div>
+        <div class="field">
+          <label>Unit of Measurement</label>
+          <select name="uom">
+            <option>KG</option>
+            <option>Ton</option>
+            <option>Gram</option>
+            <option>Nos</option>
+            <option>Liter</option>
+          </select>
+          <div class="error-text"></div>
+        </div>
+        <div class="field">
+          <label>Description</label>
+          <textarea name="description" placeholder="Enter description"></textarea>
+          <div class="error-text"></div>
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <select name="status">
+            <option>Active</option>
+            <option>Inactive</option>
+          </select>
+          <div class="error-text"></div>
+        </div>
+        <div class="form-actions">
+          <button class="ghost" type="button" data-close="materialModal">Cancel</button>
+          <button class="primary" type="submit">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal" id="confirmModal" aria-hidden="true">
+    <div class="modal-card">
+      <h2 id="confirmTitle">Confirm Delete</h2>
+      <p class="subtle" id="confirmMessage">Are you sure?</p>
+      <div class="form-actions">
+        <button class="ghost" type="button" id="confirmCancel">Cancel</button>
+        <button class="danger" type="button" id="confirmOk">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const today = new Date().toISOString().slice(0, 10);
+    const plusDays = days => {
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      return d.toISOString().slice(0, 10);
+    };
+
+    const state = {
+      currentScreen: "dashboardScreen",
+      currentMaterial: { type: "raw", category: "Scrap Input" },
+      orderFilter: "All",
+      selectedOrderId: null,
+      products: [
+        { id: "p1", name: "Industrial Pump Housing", modelId: "MDL-1001", description: "Cast housing for heavy duty pump assembly.", status: "Active", image: "" },
+        { id: "p2", name: "Valve Body Assembly", modelId: "MDL-1002", description: "Precision valve body casting.", status: "Active", image: "" },
+        { id: "p3", name: "Gearbox Cover", modelId: "MDL-1003", description: "Machined gearbox cover blank.", status: "Inactive", image: "" }
+      ],
+      materials: [
+        { id: "m1", type: "raw", category: "Scrap Input", name: "CI Boring Scrap", code: "SCR-CI-01", uom: "KG", description: "Clean cast iron boring scrap.", status: "Active" },
+        { id: "m2", type: "raw", category: "FE Alloy and Metals", name: "Ferro Silicon", code: "FE-SI-75", uom: "KG", description: "Standard ferro silicon alloy.", status: "Active" },
+        { id: "c1", type: "consumable", category: "Melting and Pouring", name: "Cover Flux", code: "CN-FLX-01", uom: "KG", description: "Flux for melt protection.", status: "Active" },
+        { id: "c2", type: "consumable", category: "Molding and Molding", name: "Green Sand Binder", code: "CN-BND-02", uom: "KG", description: "Binder for molding line.", status: "Inactive" }
+      ],
+      orders: [
+        { id: "ORD-000001", productId: "p1", customer: "Apex Engineering", mobile: "9876543210", orderDate: today, deliveryDate: plusDays(8), quantity: 24, status: "Pending", remarks: "Priority production slot requested." },
+        { id: "ORD-000002", productId: "p2", customer: "Prime Foundry Works", mobile: "9876501234", orderDate: today, deliveryDate: plusDays(14), quantity: 12, status: "In Production", remarks: "Inspection before dispatch." },
+        { id: "ORD-000003", productId: "p1", customer: "Nova Pumps", mobile: "9898989898", orderDate: today, deliveryDate: plusDays(3), quantity: 8, status: "Completed", remarks: "Ready for packing." },
+        { id: "ORD-000004", productId: "p3", customer: "Radian Machines", mobile: "9876511111", orderDate: today, deliveryDate: plusDays(21), quantity: 18, status: "Delivered", remarks: "Delivered with documents." }
+      ]
+    };
+
+    const navItems = [
+      ["dashboardScreen", "Home", "H"],
+      ["productsScreen", "Products", "P"],
+      ["rawScreen", "Raw", "R"],
+      ["ordersScreen", "Orders", "O"]
+    ];
+
+    const screens = {
+      dashboardScreen: "Manufacturing Product and Order Management",
+      productsScreen: "Product Master",
+      rawScreen: "Raw Material Master",
+      consumablesScreen: "Consumables Master",
+      materialManageScreen: "Category Management",
+      ordersScreen: "Order Management",
+      orderFormScreen: "Place New Order",
+      orderDetailScreen: "Order Details"
+    };
+
+    const $ = selector => document.querySelector(selector);
+    const $$ = selector => [...document.querySelectorAll(selector)];
+
+    function id(prefix) {
+      return prefix + Math.random().toString(36).slice(2, 9);
+    }
+
+    function productById(productId) {
+      return state.products.find(p => p.id === productId);
+    }
+
+    function showToast(message, type = "success") {
+      const toast = $("#toast");
+      toast.textContent = message;
+      toast.style.background = type === "error" ? "var(--danger)" : "var(--navy)";
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2400);
+    }
+
+    function statusClass(status) {
+      return status.toLowerCase().replace(/\s+/g, "-").replace("in-production", "production");
+    }
+
+    function setScreen(screenId) {
+      state.currentScreen = screenId;
+      $$(".screen").forEach(screen => screen.classList.toggle("active", screen.id === screenId));
+      $("#screenSubtitle").textContent = screens[screenId] || screens.dashboardScreen;
+      renderNav();
+      renderAll();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function renderNav() {
+      const html = navItems.map(([screen, label, symbol]) => `
+        <button type="button" class="${state.currentScreen === screen ? "active" : ""}" data-go="${screen}">
+          <span class="nav-symbol">${symbol}</span><span>${label}</span>
+        </button>
+      `).join("");
+      $("#bottomNav").innerHTML = html;
+      $("#sideMenu").innerHTML = [
+        ["dashboardScreen", "Dashboard"],
+        ["productsScreen", "Product Master"],
+        ["rawScreen", "Raw Material Master"],
+        ["consumablesScreen", "Consumables Master"],
+        ["ordersScreen", "Order Management"]
+      ].map(([screen, label]) => `<button type="button" class="${state.currentScreen === screen ? "active" : ""}" data-go="${screen}">${label}</button>`).join("");
+    }
+
+    function stat(label, value) {
+      return `<div class="stat"><span>${label}</span><div class="value">${value}</div></div>`;
+    }
+
+    function renderStats() {
+      const completed = state.orders.filter(o => o.status === "Completed").length;
+      const pending = state.orders.filter(o => o.status === "Pending").length;
+      $("#dashboardStats").innerHTML = [
+        stat("Total Products", state.products.length),
+        stat("Total Raw Materials", state.materials.filter(m => m.type === "raw").length),
+        stat("Total Consumables", state.materials.filter(m => m.type === "consumable").length),
+        stat("Total Orders", state.orders.length),
+        stat("Pending Orders", pending),
+        stat("Completed Orders", completed)
+      ].join("");
+
+      $("#orderStats").innerHTML = [
+        stat("Total Orders", state.orders.length),
+        stat("Pending Orders", state.orders.filter(o => o.status === "Pending").length),
+        stat("In Production Orders", state.orders.filter(o => o.status === "In Production").length),
+        stat("Completed Orders", completed),
+        stat("Delivered Orders", state.orders.filter(o => o.status === "Delivered").length)
+      ].join("");
+    }
+
+    function productThumb(product) {
+      if (product && product.image) return `<img src="${product.image}" alt="${product.name}">`;
+      const label = product ? product.name.slice(0, 2).toUpperCase() : "NA";
+      return label;
+    }
+
+    function orderCard(order) {
+      const product = productById(order.productId) || {};
+      return `
+        <article class="list-card">
+          <div class="thumb">${productThumb(product)}</div>
+          <div class="row-main">
+            <div class="row-title">${order.id} - ${product.name || "Deleted Product"}</div>
+            <div class="meta">
+              <span>${order.customer}</span>
+              <span>Qty ${order.quantity}</span>
+              <span>Delivery ${order.deliveryDate}</span>
+              <span class="badge ${statusClass(order.status)}">${order.status}</span>
+            </div>
+          </div>
+          <div class="row-actions">
+            <button class="small-btn" type="button" data-detail-order="${order.id}">Details</button>
+            <button class="small-btn" type="button" data-update-order="${order.id}">Status</button>
+          </div>
+        </article>
+      `;
+    }
+
+    function renderOrders() {
+      const search = ($("#orderSearch")?.value || "").toLowerCase();
+      const statuses = ["All", "Pending", "In Production", "Completed", "Delivered"];
+      $("#orderFilters").innerHTML = statuses.map(status => `<button type="button" class="chip ${state.orderFilter === status ? "active" : ""}" data-filter-order="${status}">${status}</button>`).join("");
+      const filtered = state.orders.filter(order => {
+        const product = productById(order.productId) || {};
+        const text = [order.id, order.customer, product.name, product.modelId, order.status].join(" ").toLowerCase();
+        return text.includes(search) && (state.orderFilter === "All" || order.status === state.orderFilter);
+      });
+      $("#orderList").innerHTML = filtered.length ? filtered.map(orderCard).join("") : emptyState("No orders found", "Try another search or place a new order.");
+      $("#recentOrders").innerHTML = state.orders.slice(0, 3).map(orderCard).join("");
+    }
+
+    function emptyState(title, text) {
+      return `<div class="empty"><strong>${title}</strong>${text}</div>`;
+    }
+
+    function renderProducts() {
+      const search = ($("#productSearch")?.value || "").toLowerCase();
+      const filtered = state.products.filter(p => [p.name, p.modelId, p.status].join(" ").toLowerCase().includes(search));
+      $("#productList").innerHTML = filtered.length ? filtered.map(product => `
+        <article class="list-card">
+          <div class="thumb">${productThumb(product)}</div>
+          <div class="row-main">
+            <div class="row-title">${product.name}</div>
+            <div class="meta">
+              <span>${product.modelId}</span>
+              <span>${product.description || "No description"}</span>
+              <span class="badge ${statusClass(product.status)}">${product.status}</span>
+            </div>
+          </div>
+          <div class="row-actions">
+            <button class="small-btn" type="button" data-edit-product="${product.id}">Edit</button>
+            <button class="small-btn danger-text" type="button" data-delete-product="${product.id}">Delete</button>
+          </div>
+        </article>
+      `).join("") : emptyState("No products found", "Add a product or change your search.");
+    }
+
+    function renderMaterials() {
+      const { type, category } = state.currentMaterial;
+      $("#materialTitle").textContent = category;
+      $("#materialSubtitle").textContent = type === "raw" ? "Raw material category page with auto-selected category." : "Consumable category page with auto-selected category.";
+      $("#addMaterialBtn").textContent = type === "raw" ? "+ Raw Material" : "+ Consumable";
+      const search = ($("#materialSearch")?.value || "").toLowerCase();
+      const filtered = state.materials.filter(m => m.type === type && m.category === category && [m.name, m.code, m.uom, m.status].join(" ").toLowerCase().includes(search));
+      $("#materialList").innerHTML = filtered.length ? filtered.map(item => `
+        <article class="list-card">
+          <div class="row-icon">${item.name.slice(0, 1).toUpperCase()}</div>
+          <div class="row-main">
+            <div class="row-title">${item.name}</div>
+            <div class="meta">
+              <span>${item.code}</span>
+              <span>${item.uom}</span>
+              <span class="badge ${statusClass(item.status)}">${item.status}</span>
+            </div>
+          </div>
+          <div class="row-actions">
+            <button class="small-btn" type="button" data-edit-material="${item.id}">Edit</button>
+            <button class="small-btn danger-text" type="button" data-delete-material="${item.id}">Delete</button>
+          </div>
+        </article>
+      `).join("") : emptyState("No records in this category", "Add a new record for this master category.");
+    }
+
+    function renderOrderFormOptions() {
+      const form = $("#orderForm");
+      if (!form) return;
+      form.productId.innerHTML = `<option value="">Select product model</option>` + state.products
+        .filter(p => p.status === "Active")
+        .map(p => `<option value="${p.id}">${p.name}</option>`).join("");
+    }
+
+    function nextOrderId() {
+      const max = state.orders.reduce((acc, order) => Math.max(acc, Number(order.id.replace("ORD-", "")) || 0), 0) + 1;
+      return "ORD-" + String(max).padStart(6, "0");
+    }
+
+    function resetOrderForm() {
+      const form = $("#orderForm");
+      form.reset();
+      form.orderId.value = nextOrderId();
+      form.orderDate.value = today;
+      form.status.value = "Pending";
+      form.modelId.value = "";
+      updateOrderProductPreview();
+      clearErrors(form);
+    }
+
+    function updateOrderProductPreview() {
+      const form = $("#orderForm");
+      const product = productById(form.productId.value);
+      form.modelId.value = product ? product.modelId : "";
+      $("#orderProductName").textContent = product ? product.name : "Select model name";
+      $("#orderProductPreview").innerHTML = productThumb(product);
+    }
+
+    function renderOrderDetail() {
+      const order = state.orders.find(o => o.id === state.selectedOrderId) || state.orders[0];
+      if (!order) {
+        $("#orderDetail").innerHTML = emptyState("No order selected", "Open any order from Order Management.");
+        return;
+      }
+      const product = productById(order.productId) || {};
+      $("#orderDetail").innerHTML = `
+        <div class="detail-hero">
+          <div class="detail-img">${productThumb(product)}</div>
+          <div>
+            <h2>${order.id}</h2>
+            <p class="subtle">${product.name || "Deleted Product"} - ${product.modelId || "NA"}</p>
+            <div class="kv">
+              <div class="kv-row"><span>Customer</span><strong>${order.customer}</strong></div>
+              <div class="kv-row"><span>Mobile</span><strong>${order.mobile || "Not provided"}</strong></div>
+              <div class="kv-row"><span>Quantity</span><strong>${order.quantity}</strong></div>
+              <div class="kv-row"><span>Order Date</span><strong>${order.orderDate}</strong></div>
+              <div class="kv-row"><span>Expected Delivery</span><strong>${order.deliveryDate}</strong></div>
+              <div class="kv-row"><span>Status</span><strong><span class="badge ${statusClass(order.status)}">${order.status}</span></strong></div>
+              <div class="kv-row"><span>Remarks</span><strong>${order.remarks || "None"}</strong></div>
+            </div>
+            <div class="form-actions">
+              <button class="ghost" type="button" data-edit-order="${order.id}">Edit Order</button>
+              <button class="secondary" type="button" data-update-order="${order.id}">Update Status</button>
+            </div>
+            <button class="danger" style="width:100%;margin-top:10px" type="button" data-cancel-order="${order.id}">Cancel Order</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderAll() {
+      renderStats();
+      renderOrders();
+      renderProducts();
+      renderMaterials();
+      renderOrderFormOptions();
+      renderOrderDetail();
+    }
+
+    function openModal(id) {
+      $("#" + id).classList.add("open");
+      $("#" + id).setAttribute("aria-hidden", "false");
+    }
+
+    function closeModal(id) {
+      $("#" + id).classList.remove("open");
+      $("#" + id).setAttribute("aria-hidden", "true");
+    }
+
+    function clearErrors(form) {
+      form.querySelectorAll(".error-text").forEach(e => e.textContent = "");
+      form.querySelectorAll("input, textarea, select").forEach(field => field.style.borderColor = "");
+    }
+
+    function setFieldError(field, message) {
+      field.style.borderColor = "var(--danger)";
+      const error = field.closest(".field")?.querySelector(".error-text");
+      if (error) error.textContent = message;
+    }
+
+    function validateRequired(form) {
+      clearErrors(form);
+      let ok = true;
+      form.querySelectorAll("[required]").forEach(field => {
+        if (!String(field.value || "").trim()) {
+          setFieldError(field, "This field is required.");
+          ok = false;
+        }
+      });
+      return ok;
+    }
+
+    function validatePositiveNumber(field) {
+      if (Number(field.value) <= 0) {
+        setFieldError(field, "Enter a positive quantity.");
+        return false;
+      }
+      return true;
+    }
+
+    function confirmAction(title, message, okLabel, action) {
+      $("#confirmTitle").textContent = title;
+      $("#confirmMessage").textContent = message;
+      $("#confirmOk").textContent = okLabel;
+      openModal("confirmModal");
+      $("#confirmOk").onclick = () => {
+        closeModal("confirmModal");
+        action();
+      };
+    }
+
+    function openProductForm(product = null) {
+      const form = $("#productForm");
+      form.reset();
+      clearErrors(form);
+      $("#productModalTitle").textContent = product ? "Edit Product" : "Add Product";
+      form.id.value = product?.id || "";
+      form.name.value = product?.name || "";
+      form.modelId.value = product?.modelId || "";
+      form.description.value = product?.description || "";
+      form.status.value = product?.status || "Active";
+      $("#productPreview").innerHTML = productThumb(product);
+      openModal("productModal");
+    }
+
+    function openMaterialForm(item = null) {
+      const form = $("#materialForm");
+      form.reset();
+      clearErrors(form);
+      const isRaw = state.currentMaterial.type === "raw";
+      $("#materialModalTitle").textContent = item ? (isRaw ? "Edit Raw Material" : "Edit Consumable") : (isRaw ? "Add Raw Material" : "Add Consumable");
+      $("#materialCategoryLabel").textContent = isRaw ? "Material Category" : "Consumable Category";
+      $("#materialNameLabel").innerHTML = isRaw ? 'Material Name <span class="required">*</span>' : 'Consumable Name <span class="required">*</span>';
+      $("#materialCodeLabel").innerHTML = isRaw ? 'Material Code <span class="required">*</span>' : 'Consumable Code <span class="required">*</span>';
+      form.id.value = item?.id || "";
+      form.type.value = state.currentMaterial.type;
+      form.category.value = item?.category || state.currentMaterial.category;
+      form.name.value = item?.name || "";
+      form.code.value = item?.code || "";
+      form.uom.value = item?.uom || "KG";
+      form.description.value = item?.description || "";
+      form.status.value = item?.status || "Active";
+      openModal("materialModal");
+    }
+
+    document.addEventListener("click", event => {
+      const go = event.target.closest("[data-go]");
+      if (go) {
+        const target = go.dataset.go;
+        if (target === "orderFormScreen") resetOrderForm();
+        setScreen(target);
+        return;
+      }
+
+      const category = event.target.closest("[data-category]");
+      if (category) {
+        state.currentMaterial = { type: category.dataset.materialType, category: category.dataset.category };
+        setScreen("materialManageScreen");
+        return;
+      }
+
+      const close = event.target.closest("[data-close]");
+      if (close) {
+        closeModal(close.dataset.close);
+        return;
+      }
+
+      if (event.target.id === "addProductBtn") openProductForm();
+      if (event.target.id === "addMaterialBtn") openMaterialForm();
+
+      const editProduct = event.target.closest("[data-edit-product]");
+      if (editProduct) openProductForm(state.products.find(p => p.id === editProduct.dataset.editProduct));
+
+      const deleteProduct = event.target.closest("[data-delete-product]");
+      if (deleteProduct) {
+        const product = state.products.find(p => p.id === deleteProduct.dataset.deleteProduct);
+        confirmAction("Delete Product", `Delete ${product.name}? Linked orders will retain their current history.`, "Delete", () => {
+          state.products = state.products.filter(p => p.id !== product.id);
+          renderAll();
+          showToast("Product deleted.");
+        });
+      }
+
+      const editMaterial = event.target.closest("[data-edit-material]");
+      if (editMaterial) openMaterialForm(state.materials.find(m => m.id === editMaterial.dataset.editMaterial));
+
+      const deleteMaterial = event.target.closest("[data-delete-material]");
+      if (deleteMaterial) {
+        const item = state.materials.find(m => m.id === deleteMaterial.dataset.deleteMaterial);
+        confirmAction("Delete Record", `Delete ${item.name}?`, "Delete", () => {
+          state.materials = state.materials.filter(m => m.id !== item.id);
+          renderAll();
+          showToast("Record deleted.");
+        });
+      }
+
+      const filter = event.target.closest("[data-filter-order]");
+      if (filter) {
+        state.orderFilter = filter.dataset.filterOrder;
+        renderOrders();
+      }
+
+      const detail = event.target.closest("[data-detail-order]");
+      if (detail) {
+        state.selectedOrderId = detail.dataset.detailOrder;
+        setScreen("orderDetailScreen");
+      }
+
+      const update = event.target.closest("[data-update-order]");
+      if (update) {
+        const order = state.orders.find(o => o.id === update.dataset.updateOrder);
+        const flow = ["Pending", "In Production", "Completed", "Delivered"];
+        order.status = flow[(flow.indexOf(order.status) + 1) % flow.length];
+        renderAll();
+        showToast(`Order status updated to ${order.status}.`);
+      }
+
+      const cancel = event.target.closest("[data-cancel-order]");
+      if (cancel) {
+        const order = state.orders.find(o => o.id === cancel.dataset.cancelOrder);
+        confirmAction("Cancel Order", `Cancel ${order.id}?`, "Cancel Order", () => {
+          order.status = "Cancelled";
+          renderAll();
+          showToast("Order cancelled.");
+        });
+      }
+
+      if (event.target.id === "confirmCancel") closeModal("confirmModal");
+    });
+
+    $("#productSearch").addEventListener("input", renderProducts);
+    $("#materialSearch").addEventListener("input", renderMaterials);
+    $("#orderSearch").addEventListener("input", renderOrders);
+
+    $("#productForm").image.addEventListener("change", event => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        $("#productPreview").innerHTML = `<img src="${reader.result}" alt="Product preview">`;
+        $("#productForm").dataset.image = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    $("#productForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      if (!validateRequired(form)) return showToast("Please fix product validation errors.", "error");
+      const existing = state.products.find(p => p.modelId.toLowerCase() === form.modelId.value.trim().toLowerCase() && p.id !== form.id.value);
+      if (existing) {
+        setFieldError(form.modelId, "Model ID must be unique.");
+        return showToast("Model ID already exists.", "error");
+      }
+      const payload = {
+        id: form.id.value || id("p"),
+        name: form.name.value.trim(),
+        modelId: form.modelId.value.trim(),
+        description: form.description.value.trim(),
+        status: form.status.value,
+        image: form.dataset.image || state.products.find(p => p.id === form.id.value)?.image || ""
+      };
+      if (form.id.value) {
+        state.products = state.products.map(p => p.id === payload.id ? payload : p);
+      } else {
+        state.products.unshift(payload);
+      }
+      delete form.dataset.image;
+      closeModal("productModal");
+      renderAll();
+      showToast("Product saved successfully.");
+    });
+
+    $("#materialForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      if (!validateRequired(form)) return showToast("Please fix validation errors.", "error");
+      const payload = {
+        id: form.id.value || id(form.type.value === "raw" ? "m" : "c"),
+        type: form.type.value,
+        category: form.category.value,
+        name: form.name.value.trim(),
+        code: form.code.value.trim(),
+        uom: form.uom.value,
+        description: form.description.value.trim(),
+        status: form.status.value
+      };
+      if (form.id.value) state.materials = state.materials.map(m => m.id === payload.id ? payload : m);
+      else state.materials.unshift(payload);
+      closeModal("materialModal");
+      renderAll();
+      showToast("Record saved successfully.");
+    });
+
+    $("#orderForm").productId.addEventListener("change", updateOrderProductPreview);
+
+    $("#orderForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const ok = validateRequired(form) && validatePositiveNumber(form.quantity);
+      if (!ok) return showToast("Please fix order validation errors.", "error");
+      state.orders.unshift({
+        id: form.orderId.value,
+        productId: form.productId.value,
+        customer: form.customer.value.trim(),
+        mobile: form.mobile.value.trim(),
+        orderDate: form.orderDate.value,
+        deliveryDate: form.deliveryDate.value,
+        quantity: Number(form.quantity.value),
+        status: form.status.value || "Pending",
+        remarks: form.remarks.value.trim()
+      });
+      showToast("Order submitted successfully.");
+      setScreen("ordersScreen");
+    });
+
+    $("#productLoading").classList.add("show");
+    renderNav();
+    renderAll();
+    resetOrderForm();
+    setTimeout(() => {
+      $("#productLoading").classList.remove("show");
+      renderProducts();
+    }, 700);
+  </script>
+</body>
+</html>
