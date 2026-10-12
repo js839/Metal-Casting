@@ -187,6 +187,17 @@
     .pill.Cancelled, .pill.inactive, .pill.Hold { background: var(--danger-soft); color: var(--danger); }
     .pill.NotStarted { background: #f1f5f9; color: #475569; }
     .pill.ReadyforPouring, .pill.ReadytoPour { background: var(--accent-soft); color: var(--accent-2); }
+    .pill.InFurnace { background: var(--info-soft); color: var(--info); }
+    .pill.WaitingHT, .pill.Unloaded { background: var(--warn-soft); color: var(--warn); }
+    .pill.Fettling { background: var(--accent-soft); color: var(--accent-2); }
+    .pill.InStock, .pill.Dispatched { background: var(--teal-soft); color: var(--teal); }
+
+    /* live furnace timer */
+    .live { display: inline-flex; align-items: center; gap: 6px; color: var(--info); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: pulse 1.4s ease-in-out infinite; }
+    .live.over { color: var(--danger); }
+    @keyframes pulse { 50% { opacity: .25; } }
+    .dur { font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
     /* ---------- Progress ---------- */
     .prog { display: flex; align-items: center; gap: 8px; min-width: 120px; }
@@ -239,6 +250,8 @@
     .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-bottom: 12px; }
     .summary div { background: var(--soft); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
     .summary span { display: block; font-size: 11.5px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+    .summary span.pill { display: inline-flex; text-transform: none; letter-spacing: 0; font-size: 12px; }
+    .modal-card.wide { width: min(1000px, 100%); }
     .summary b { display: block; font-size: 18px; font-weight: 700; color: var(--ink); margin-top: 2px; font-variant-numeric: tabular-nums; }
     .hist { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 8px; background: white; }
     .hist-top { display: flex; justify-content: space-between; gap: 8px; align-items: center; flex-wrap: wrap; font-weight: 600; color: var(--ink); }
@@ -367,6 +380,10 @@
         <section id="orders" class="screen"></section>
         <section id="molding" class="screen"></section>
         <section id="melting" class="screen"></section>
+        <section id="heat" class="screen"></section>
+        <section id="fettling" class="screen"></section>
+        <section id="stock" class="screen"></section>
+        <section id="dispatch" class="screen"></section>
       </div>
     </main>
   </div>
@@ -411,7 +428,13 @@
       clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5h4"/>',
       inbox: '<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.7 4H7.3a2 2 0 0 0-1.8 1.1z"/>',
       weight: '<circle cx="12" cy="5" r="3"/><path d="M6.5 8h11l3 13h-17z"/>',
-      status: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>'
+      status: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+      heat: '<path d="M14 14.8V4a2 2 0 1 0-4 0v10.8a4 4 0 1 0 4 0z"/><path d="M12 9v7"/>',
+      fettling: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/><path d="M12 4v3M12 17v3M4 12h3M17 12h3"/>',
+      stock: '<path d="M3 21V8l9-5 9 5v13"/><path d="M7 21v-8h10v8"/><path d="M7 17h10"/>',
+      dispatch: '<path d="M1 4h14v12H1z"/><path d="M15 9h4l3 3v4h-7"/><circle cx="5.5" cy="18.5" r="2"/><circle cx="18.5" cy="18.5" r="2"/>',
+      print: '<path d="M6 9V2h12v7"/><rect x="2" y="9" width="20" height="8" rx="2"/><path d="M6 14h12v8H6z"/>',
+      unload: '<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/>'
     };
     const icon = (name, cls = '') => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ''}</svg>`;
 
@@ -422,14 +445,19 @@
       ['consumables', 'Consumables', 'Consumables', 'Masters'],
       ['orders', 'Orders', 'Orders', 'Operations'],
       ['molding', 'Molding', 'Molding', 'Production'],
-      ['melting', 'Melting', 'Melting & Pouring', 'Production']
+      ['melting', 'Melting', 'Melting & Pouring', 'Production'],
+      ['heat', 'Heat Treat', 'Heat Treatment', 'Production'],
+      ['fettling', 'Fettling', 'Fettling & Finishing', 'Production'],
+      ['stock', 'Stock', 'Stock Inventory', 'Stock & Dispatch'],
+      ['dispatch', 'Dispatch', 'Dispatch', 'Stock & Dispatch']
     ];
-    const bottomNavIds = ['dashboard', 'products', 'orders', 'molding', 'melting'];
+    const bottomNavIds = ['dashboard', 'orders', 'melting', 'heat', 'dispatch'];
     const rawCategories = ['Scrap Input', 'FE Alloy & Metal Input'];
-    const consumableCategories = ['Melting & Pouring Consumable', 'Molding & Molding Consumable'];
+    const consumableCategories = ['Melting & Pouring Consumable', 'Molding & Molding Consumable', 'Heat Treatment Consumable', 'Fettling & Finishing Consumable'];
+    const CONSUMABLE_KIND = { mold: 'Molding & Molding Consumable', meltcon: 'Melting & Pouring Consumable', ht: 'Heat Treatment Consumable', fettle: 'Fettling & Finishing Consumable' };
     const units = ['KG', 'Ton', 'Gram', 'Litre', 'Pcs', 'Box'];
     const orderStatuses = ['Pending', 'In Production', 'Completed', 'Delivered', 'Cancelled'];
-    const state = { page: 'dashboard', history: [], loading: true, products: [], raw_materials: [], consumables: [], orders: [], search: {}, filter: { orderStatus: 'All', molding: 'All', melting: 'Ready to Pour' }, molding_jobs: [], molding_entries: [], molding_usage: [], melting_batches: [], melting_usage: [], productionReady: false, productionError: '', selectedRawCategory: null, selectedConsumableCategory: null };
+    const state = { page: 'dashboard', history: [], loading: true, products: [], raw_materials: [], consumables: [], orders: [], search: {}, filter: { orderStatus: 'All', molding: 'All', melting: 'Ready to Pour', heat: 'In Furnace', fettling: 'Waiting', stock: 'By Order' }, molding_jobs: [], molding_entries: [], molding_usage: [], melting_batches: [], melting_usage: [], productionReady: false, productionError: '', ht_batches: [], ht_items: [], ht_usage: [], fettling_entries: [], fettling_usage: [], dispatches: [], flowReady: false, flowError: '', selectedRawCategory: null, selectedConsumableCategory: null };
 
     function request(path, options = {}) {
       return fetch(`${API}/${path}`, { ...options, headers: { ...headers, ...(options.headers || {}) } })
@@ -470,6 +498,19 @@
           Object.assign(state, { molding_jobs: jobs, molding_entries: entries, molding_usage: mUsage, melting_batches: batches, melting_usage: bUsage, productionReady: true, productionError: '' });
         } catch (prodError) {
           Object.assign(state, { productionReady: false, productionError: prodError.message });
+        }
+        try {
+          const [htb, hti, htu, fe, feu, dsp] = await Promise.all([
+            request('ht_batches?select=*&order=created_at.desc'),
+            request('ht_items?select=*&order=time_in.desc'),
+            request('ht_consumable_usage?select=*'),
+            request('fettling_entries?select=*&order=entry_date.desc,created_at.desc'),
+            request('fettling_consumable_usage?select=*'),
+            request('dispatches?select=*&order=dispatch_date.desc,created_at.desc')
+          ]);
+          Object.assign(state, { ht_batches: htb, ht_items: hti, ht_usage: htu, fettling_entries: fe, fettling_usage: feu, dispatches: dsp, flowReady: true, flowError: '' });
+        } catch (flowError) {
+          Object.assign(state, { flowReady: false, flowError: flowError.message });
         }
         setConn('Live', 'ok');
         setLoading(false);
@@ -571,6 +612,10 @@
       renderOrders();
       renderMolding();
       renderMelting();
+      renderHeat();
+      renderFettling();
+      renderStock();
+      renderDispatch();
     }
 
     function renderError(message) {
@@ -599,6 +644,10 @@
           ${navTile('orders', 'Order Management', 'Place and track orders')}
           ${navTile('molding', 'Molding', `${state.orders.filter(o => ACTIVE_ORDER(o) && (jobFor(o.id)?.status || 'Not Started') !== 'Molds Ready').length} orders waiting for molds`)}
           ${navTile('melting', 'Melting & Pouring', `${state.orders.reduce((s, o) => s + (ACTIVE_ORDER(o) ? availableMolds(o.id) : 0), 0)} molds ready to pour`)}
+          ${navTile('heat', 'Heat Treatment', state.flowReady ? `${sum(state.ht_items.filter(i => !i.time_out), i => i.qty)} pcs in furnace · ${sum(state.orders.filter(FLOW_ORDER), o => htWaiting(o.id))} waiting` : 'Furnace in / out time per product')}
+          ${navTile('fettling', 'Fettling & Finishing', state.flowReady ? `${sum(state.orders.filter(FLOW_ORDER), o => fettleWaiting(o.id))} pcs waiting for finishing` : 'Grinding, welding and painting')}
+          ${navTile('stock', 'Stock Inventory', state.flowReady ? `${sum(state.orders.filter(FLOW_ORDER), o => stockQty(o.id))} finished pcs in stock` : 'Ready finished products')}
+          ${navTile('dispatch', 'Dispatch', state.flowReady ? `${state.orders.filter(o => FLOW_ORDER(o) && stockQty(o.id) > 0).length} orders ready to dispatch` : 'Challan, vehicle and delivery')}
          </div>` +
         tablePanel('Recent Orders', recent.length, `<button class="btn small ghost" onclick="navigate('orders')"><span>View all</span>${icon('chevron', 'sm')}</button>`,
           ordersTable(recent, 'No orders yet. Place the first order from Order Management.'));
@@ -726,15 +775,15 @@
       return `<span class="thumb ${cls}">${src ? `<img src="${esc(src)}" alt="" loading="lazy">` : esc(String(label || 'MC').slice(0,2).toUpperCase())}</span>`;
     }
 
-    function modal(title, body) {
-      document.getElementById('modal').innerHTML = `<div class="modal-card"><div class="modal-head"><h3>${title}</h3><button class="icon-btn" onclick="closeModal()" aria-label="Close">${icon('close')}</button></div><div class="modal-body">${body}</div></div>`;
+    function modal(title, body, wide = false) {
+      document.getElementById('modal').innerHTML = `<div class="modal-card${wide ? ' wide' : ''}"><div class="modal-head"><h3>${title}</h3><button class="icon-btn" onclick="closeModal()" aria-label="Close">${icon('close')}</button></div><div class="modal-body">${body}</div></div>`;
       document.getElementById('modal').classList.add('open');
     }
     function closeModal() { document.getElementById('modal').classList.remove('open'); }
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
     function field(id, label, value = '', type = 'text', req = false) {
-      return `<div class="field ${type === 'textarea' ? 'full' : ''}" data-field="${id}"><label for="${id}">${label}${req ? ' <span class="req">*</span>' : ''}</label>${type === 'textarea' ? `<textarea id="${id}">${esc(value)}</textarea>` : `<input id="${id}" type="${type}" value="${esc(value)}">`}<div class="error">${label} is required</div></div>`;
+      return `<div class="field ${type === 'textarea' ? 'full' : ''}" data-field="${id}"><label for="${id}">${label}${req ? ' <span class="req">*</span>' : ''}</label>${type === 'textarea' ? `<textarea id="${id}">${esc(value)}</textarea>` : `<input id="${id}" type="${type}" value="${esc(value)}"${type === 'number' ? ' step="any" min="0"' : ''}>`}<div class="error">${label} is required</div></div>`;
     }
     function selectField(id, label, value, options, req = false) {
       return `<div class="field" data-field="${id}"><label for="${id}">${label}${req ? ' <span class="req">*</span>' : ''}</label><select id="${id}">${options.map(o => `<option value="${esc(o)}" ${value === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select><div class="error">${label} is required</div></div>`;
@@ -904,7 +953,7 @@
     }
     function showOrderDetail(id) {
       const o = state.orders.find(x => x.id === id);
-      details(`Order ${esc(o.order_id || '')}`, [['Order ID', `<span class="mono">${esc(o.order_id)}</span>`], ['Model Name', esc(o.model_name)], ['Model ID', `<span class="mono">${esc(o.model_id)}</span>`], ['Customer', esc(o.customer_name)], ['Mobile', esc(o.customer_mobile || '—')], ['Quantity', esc(o.quantity)], ['Order Date', moneyDate(o.order_date)], ['Delivery Date', dueDate(o)], ['Status', pill(o.status)], ['Molds Made', state.productionReady ? `${num(jobFor(o.id)?.molds_made)} / ${num(jobFor(o.id)?.molds_required ?? o.quantity)}` : '—'], ['Molds Poured', state.productionReady ? String(pouredFor(o.id)) : '—'], ['Remarks', esc(o.remarks || '—')]],
+      details(`Order ${esc(o.order_id || '')}`, [['Order ID', `<span class="mono">${esc(o.order_id)}</span>`], ['Model Name', esc(o.model_name)], ['Model ID', `<span class="mono">${esc(o.model_id)}</span>`], ['Customer', esc(o.customer_name)], ['Mobile', esc(o.customer_mobile || '—')], ['Quantity', esc(o.quantity)], ['Order Date', moneyDate(o.order_date)], ['Delivery Date', dueDate(o)], ['Status', pill(o.status)], ['Molds Made', state.productionReady ? `${num(jobFor(o.id)?.molds_made)} / ${num(jobFor(o.id)?.molds_required ?? o.quantity)}` : '—'], ['Molds Poured', state.productionReady ? String(pouredFor(o.id)) : '—'], ...(state.flowReady ? [['Heat Treated', `${htDone(o.id)} pcs${htLoaded(o.id) - htDone(o.id) ? ` <span class="sub">${htLoaded(o.id) - htDone(o.id)} in furnace</span>` : ''}`], ['Finished (OK / Rejected)', `${fettledOk(o.id)} / ${fettledRej(o.id)}`], ['Dispatched', `${dispatchedQty(o.id)} of ${esc(o.quantity)}`], ['In Stock', String(stockQty(o.id))]] : []), ['Remarks', esc(o.remarks || '—')]],
         `<button class="btn danger" onclick="save('orders','${id}',{status:'Cancelled'},'Order cancelled')">${icon('close', 'sm')}<span>Cancel Order</span></button><button class="btn secondary" onclick="openStatusForm('${id}')">${icon('status', 'sm')}<span>Update Status</span></button><button class="btn primary" onclick="openOrderForm('${id}')">${icon('edit', 'sm')}<span>Edit Order</span></button>`,
         detailTop(o.product_image_url, o.model_name, `${esc(o.model_id)} · ${esc(o.customer_name)} · Qty ${esc(o.quantity)}`, pill(o.status)));
     }
@@ -943,7 +992,7 @@
       if (kind === 'raw') {
         return rawCategories.map(cat => `<optgroup label="${esc(cat)}">${state.raw_materials.filter(r => r.category === cat && r.status === 'Active').map(r => opt(r.id, r.material_name, r.unit_of_measurement, 'Raw Material', cat, r.material_code)).join('')}</optgroup>`).join('');
       }
-      const cat = kind === 'mold' ? 'Molding & Molding Consumable' : 'Melting & Pouring Consumable';
+      const cat = CONSUMABLE_KIND[kind] || 'Melting & Pouring Consumable';
       return state.consumables.filter(c => c.category === cat && c.status === 'Active').map(c => opt(c.id, c.consumable_name, c.unit_of_measurement, 'Consumable', cat, c.consumable_code)).join('');
     }
     function addLine(containerId, kind, preset = {}) {
@@ -1165,7 +1214,6 @@
       const poured = pouredFor(o.id);
       const avail = availableMolds(o.id);
       const heats = batchesFor(o.id);
-      const allDone = avail === 0 && heats.length && heats.every(b => b.status === 'Poured') && made >= num(job.molds_required);
       return `<tr class="click" onclick="showHeats('${o.id}')">
         ${td('Order', `<span class="mono">${esc(o.order_id)}</span>`, 'lead nowrap')}
         ${td('Product', prodCell(o.product_image_url, o.model_name, `${o.model_id} · ${o.customer_name}`))}
@@ -1178,7 +1226,7 @@
         ${td('Actions', `<div class="actions" onclick="event.stopPropagation()">
           ${avail ? actBtn('primary', 'melting', 'New Heat', `openMeltingForm('${o.id}')`) : ''}
           ${actBtn('ghost', 'history', `Heats (${heats.length})`, `showHeats('${o.id}')`, true)}
-          ${allDone && o.status !== 'Completed' ? actBtn('success', 'check', 'Mark Completed', `save('orders','${o.id}',{status:'Completed'},'Order marked Completed')`) : ''}
+          ${state.flowReady && htWaiting(o.id) > 0 ? actBtn('success', 'heat', 'Send to HT', `navigate('heat'); openHTBatchForm('${o.id}')`) : ''}
         </div>`, 'act')}
       </tr>`;
     }
@@ -1331,6 +1379,8 @@
     }
 
     async function deleteHeat(id, orderId) {
+      const hb = state.melting_batches.find(x => x.id === id);
+      if (state.flowReady && hb?.status === 'Poured' && pouredDone(orderId) - num(hb.molds_poured) < htLoaded(orderId)) return toast('Cannot delete: castings from this heat are already in Heat Treatment', true);
       if (!confirm('Delete this heat? Its molds will become available again.')) return;
       try {
         await request(`melting_batches?id=eq.${id}`, { method: 'DELETE' });
@@ -1338,6 +1388,680 @@
         toast('Heat deleted');
         showHeats(orderId);
       } catch (error) { toast(error.message, true); }
+    }
+
+    /* ========== PRODUCTION: HEAT TREATMENT → FETTLING → STOCK → DISPATCH ========== */
+    const FLOW_ORDER = o => o.status !== 'Cancelled';
+    const HT_PROCESSES = ['Water Toughening', 'Hardening', 'Tempering', 'Hardening + Tempering', 'Annealing', 'Normalizing', 'Stress Relieving', 'Solution Annealing'];
+    const REP = { Prefer: 'return=representation' };
+    const sum = (list, fn) => list.reduce((s, x) => s + num(fn(x)), 0);
+    const orderMatch = (o, q) => `${o.order_id} ${o.model_name} ${o.model_id} ${o.customer_name}`.toLowerCase().includes(q);
+
+    /* ---- quantities per order (1 mold = 1 casting) ---- */
+    function pouredDone(oid) { return sum(batchesFor(oid).filter(b => b.status === 'Poured'), b => b.molds_poured); }
+    function htItemsFor(oid) { return state.ht_items.filter(i => i.order_uuid === oid); }
+    function htLoaded(oid) { return sum(htItemsFor(oid), i => i.qty); }
+    function htDone(oid) { return sum(htItemsFor(oid).filter(i => i.time_out), i => i.qty); }
+    function htInFurnace(oid) { return htLoaded(oid) - htDone(oid); }
+    function htWaiting(oid) { return Math.max(pouredDone(oid) - htLoaded(oid), 0); }
+    function fettleFor(oid) { return state.fettling_entries.filter(e => e.order_uuid === oid); }
+    function fettledOk(oid) { return sum(fettleFor(oid), e => e.qty_ok); }
+    function fettledRej(oid) { return sum(fettleFor(oid), e => e.qty_rejected); }
+    function fettleWaiting(oid) { return Math.max(htDone(oid) - fettledOk(oid) - fettledRej(oid), 0); }
+    function dispatchesFor(oid) { return state.dispatches.filter(d => d.order_uuid === oid); }
+    function dispatchedQty(oid) { return sum(dispatchesFor(oid), d => d.qty); }
+    function stockQty(oid) { return Math.max(fettledOk(oid) - dispatchedQty(oid), 0); }
+    function htBatch(id) { return state.ht_batches.find(b => b.id === id); }
+    function htItemsOfBatch(bid) { return state.ht_items.filter(i => i.ht_batch_id === bid); }
+
+    /* ---- time helpers ---- */
+    function toLocalInput(v) { const d = v ? new Date(v) : new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); }
+    function fromLocalInput(v) { return v ? new Date(v).toISOString() : null; }
+    function localToday() { return toLocalInput().slice(0, 10); }
+    function localDay(v) { return v ? toLocalInput(v).slice(0, 10) : ''; }
+    function dateTime(v) { return v ? new Date(v).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true }) : '—'; }
+    function durText(ms) { const m = Math.max(Math.round(ms / 60000), 0); const h = Math.floor(m / 60); return h ? `${h}h ${String(m % 60).padStart(2, '0')}m` : `${m}m`; }
+    function itemDur(i) { return (i.time_out ? new Date(i.time_out) : new Date()) - new Date(i.time_in); }
+    function targetMs(i) { const h = num(htBatch(i.ht_batch_id)?.soak_hours); return h > 0 ? h * 3600000 : 0; }
+    function durCell(i) {
+      if (i.time_out) return `<span class="dur">${durText(itemDur(i))}</span>`;
+      const t = targetMs(i);
+      return `<span class="live ${t && itemDur(i) > t ? 'over' : ''}" data-since="${esc(i.time_in)}" data-target="${t}" title="${t ? `Target ${durText(t)}` : 'Running'}">${durText(itemDur(i))}</span>`;
+    }
+    setInterval(() => document.querySelectorAll('.live[data-since]').forEach(el => {
+      const ms = Date.now() - new Date(el.dataset.since);
+      el.textContent = durText(ms);
+      el.classList.toggle('over', num(el.dataset.target) > 0 && ms > num(el.dataset.target));
+    }), 30000);
+
+    function flowGuard(target, title) {
+      if (!state.productionReady) { productionMissing(target); return false; }
+      if (!state.flowReady) {
+        document.getElementById(target).innerHTML = header(title, 'New production tables not found') +
+          `<div class="notice">Run <b>supabase_ht_fettling_dispatch_v3.sql</b> in the Supabase SQL Editor, then press Refresh.<br><small>${esc(state.flowError || '')}</small></div>`;
+        return false;
+      }
+      return true;
+    }
+    function orderCell(o) { return prodCell(o.product_image_url, o.model_name, `${o.model_id} · ${o.customer_name}`); }
+    function sendBtnOrders() { return state.orders.filter(o => FLOW_ORDER(o) && htWaiting(o.id) > 0); }
+
+    /* ============================ HEAT TREATMENT ============================ */
+    function renderHeat() {
+      if (!flowGuard('heat', 'Heat Treatment')) return;
+      const q = (state.search.heat || '').toLowerCase();
+      const tab = state.filter.heat;
+      const orders = state.orders.filter(FLOW_ORDER);
+      const waitingOrders = orders.filter(o => htWaiting(o.id) > 0);
+      const open = state.ht_items.filter(i => !i.time_out);
+      const done = state.ht_items.filter(i => i.time_out);
+      const doneToday = done.filter(i => localDay(i.time_out) === localToday());
+      const avg = done.length ? sum(done, itemDur) / done.length : 0;
+      const itemMatch = i => { const o = orderById(i.order_uuid); return o && orderMatch(o, q); };
+      const tabList = ['In Furnace', 'Waiting', 'Completed', 'Cycle Time'];
+      const counts = { 'In Furnace': open.length, 'Waiting': waitingOrders.length, 'Completed': done.length };
+      let body;
+      if (tab === 'Waiting') {
+        const rows = waitingOrders.filter(o => orderMatch(o, q));
+        body = tablePanel('Poured castings waiting for Heat Treatment', rows.length, searchBox('heat', 'Search order, model or customer', 'renderHeat'),
+          dataTable([['Order', ''], ['Product / Customer', ''], ['Delivery', ''], ['Poured', 'num'], ['In Furnace', 'num'], ['HT Done', 'num'], ['Waiting', 'num'], ['Actions', 'act']],
+            rows.map(o => `<tr>
+              ${td('Order', `<span class="mono">${esc(o.order_id)}</span>`, 'lead nowrap')}
+              ${td('Product', orderCell(o))}
+              ${td('Delivery', dueDate(o), 'nowrap')}
+              ${td('Poured', pouredDone(o.id), 'num')}
+              ${td('In Furnace', htInFurnace(o.id), 'num')}
+              ${td('HT Done', htDone(o.id), 'num')}
+              ${td('Waiting', `<span class="strong">${htWaiting(o.id)}</span>`, 'num')}
+              ${td('Actions', `<div class="actions">${actBtn('primary', 'heat', 'Load in Furnace', `openHTBatchForm('${o.id}')`)}</div>`, 'act')}
+            </tr>`), 'No poured castings are waiting. Heats marked "Poured" in Melting appear here.'));
+      } else if (tab === 'Cycle Time') {
+        body = tablePanel('Heat Treatment time by product', null, '', cycleTable(done));
+      } else {
+        const list = (tab === 'In Furnace' ? open.sort((a, b) => a.time_in.localeCompare(b.time_in)) : done.sort((a, b) => b.time_out.localeCompare(a.time_out))).filter(itemMatch);
+        body = tablePanel(tab === 'In Furnace' ? 'Products in furnace now' : 'Completed heat treatment', list.length, searchBox('heat', 'Search order, model or customer', 'renderHeat'),
+          htItemsTable(list, tab === 'In Furnace' ? 'Furnace is empty. Load castings with "New Furnace Batch".' : 'No heat treatment completed yet.'));
+      }
+      const batches = [...state.ht_batches].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 15);
+      document.getElementById('heat').innerHTML =
+        header('Heat Treatment', 'Load poured castings in the furnace and record In / Out time of every product',
+          `<button class="btn primary" onclick="openHTBatchForm()">${icon('plus', 'sm')}<span>New Furnace Batch</span></button>`) +
+        statCards([['Waiting for HT (pcs)', sum(orders, o => htWaiting(o.id)), 'clock', 'amber'], ['In Furnace (pcs)', sum(open, i => i.qty), 'heat', 'red'],
+          ['Running Batches', state.ht_batches.filter(b => b.status === 'In Furnace').length, 'history', 'blue'], ['Out Today (pcs)', sum(doneToday, i => i.qty), 'unload', 'green'],
+          ['Total HT Done (pcs)', sum(done, i => i.qty), 'check', 'teal'], ['Avg Time / Load', done.length ? durText(avg) : '—', 'clock', 'orange']]) +
+        `<div style="margin-bottom:14px">${tabs('heat', tabList, 'renderHeat', counts)}</div>` + body +
+        tablePanel('Furnace Batches', batches.length, '', htBatchesTable(batches));
+    }
+
+    function htItemsTable(list, emptyMsg, inBatch = false) {
+      return dataTable(
+        [...(inBatch ? [] : [['Batch', '']]), ['Order / Product', ''], ['Pcs', 'num'], ...(inBatch ? [] : [['Furnace / Process', '']]), ['Time In', ''], ['Time Out', ''], ['HT Time', ''], ['Actions', 'act']],
+        list.map(i => {
+          const o = orderById(i.order_uuid) || {};
+          const b = htBatch(i.ht_batch_id) || {};
+          return `<tr class="${inBatch ? '' : 'click'}" ${inBatch ? '' : `onclick="showHTBatch('${i.ht_batch_id}')"`}>
+            ${inBatch ? '' : td('Batch', `<span class="mono">${esc(b.batch_no || '—')}</span>`, 'lead nowrap')}
+            ${td('Product', `<div class="cell-prod">${thumb(o.product_image_url, o.model_name)}<div><b>${esc(o.model_name || '—')}</b><small>${esc(o.order_id || '')}${inBatch ? '' : ` · ${esc(o.customer_name || '')}`}</small></div></div>`, inBatch ? 'lead' : '')}
+            ${td('Pcs', `<span class="strong">${num(i.qty)}</span>`, 'num')}
+            ${inBatch ? '' : td('Furnace', `${esc(b.furnace_no || '—')}<span class="sub">${esc(b.process_type || '')}${b.temperature_c ? ` · ${fmt(b.temperature_c)}°C` : ''}</span>`)}
+            ${td('Time In', dateTime(i.time_in), 'nowrap')}
+            ${td('Time Out', i.time_out ? dateTime(i.time_out) : pill('In Furnace'), 'nowrap')}
+            ${td('HT Time', durCell(i))}
+            ${td('Actions', `<div class="actions" onclick="event.stopPropagation()">
+              ${i.time_out ? '' : actBtn('success', 'unload', 'Unload', `unloadHTItem('${i.id}', ${inBatch})`)}
+              ${actBtn('ghost', 'edit', 'Edit times', `openHTItemForm('${i.ht_batch_id}','${i.id}')`, true)}
+              ${inBatch ? actBtn('danger', 'trash', 'Remove', `deleteHTItem('${i.id}')`, true) : ''}
+            </div>`, 'act')}
+          </tr>`;
+        }), emptyMsg);
+    }
+
+    function cycleTable(done) {
+      const map = {};
+      done.forEach(i => {
+        const o = orderById(i.order_uuid) || {};
+        const b = htBatch(i.ht_batch_id) || {};
+        const k = `${o.model_id}|${b.process_type || ''}`;
+        const ms = itemDur(i);
+        const r = map[k] = map[k] || { o, process: b.process_type || '—', loads: 0, pcs: 0, total: 0, min: Infinity, max: 0 };
+        r.loads++; r.pcs += num(i.qty); r.total += ms; r.min = Math.min(r.min, ms); r.max = Math.max(r.max, ms);
+      });
+      const rows = Object.values(map).sort((a, b) => b.total / b.loads - a.total / a.loads);
+      return dataTable([['Product', ''], ['Process', ''], ['Loads', 'num'], ['Pcs', 'num'], ['Avg Time', 'num'], ['Fastest', 'num'], ['Slowest', 'num']],
+        rows.map(r => `<tr>
+          ${td('Product', prodCell(r.o.product_image_url, r.o.model_name, r.o.model_id), 'lead')}
+          ${td('Process', esc(r.process))}
+          ${td('Loads', r.loads, 'num')}
+          ${td('Pcs', r.pcs, 'num')}
+          ${td('Avg Time', `<span class="dur">${durText(r.total / r.loads)}</span>`, 'num')}
+          ${td('Fastest', durText(r.min), 'num')}
+          ${td('Slowest', durText(r.max), 'num')}
+        </tr>`), 'Cycle time appears after the first product is unloaded from the furnace.');
+    }
+
+    function batchSpan(bid) {
+      const items = htItemsOfBatch(bid);
+      if (!items.length) return null;
+      const start = Math.min(...items.map(i => new Date(i.time_in)));
+      const open = items.some(i => !i.time_out);
+      const end = open ? Date.now() : Math.max(...items.map(i => new Date(i.time_out)));
+      return { start, open, ms: end - start };
+    }
+
+    function htBatchesTable(list) {
+      return dataTable([['Batch No', ''], ['Date', ''], ['Furnace', ''], ['Process', ''], ['Orders', 'num'], ['Out / Pcs', 'num'], ['Batch Time', ''], ['Status', ''], ['Actions', 'act']],
+        list.map(b => {
+          const items = htItemsOfBatch(b.id);
+          const sp = batchSpan(b.id);
+          return `<tr class="click" onclick="showHTBatch('${b.id}')">
+            ${td('Batch No', `<span class="mono">${esc(b.batch_no)}</span>`, 'lead nowrap')}
+            ${td('Date', moneyDate(b.ht_date), 'nowrap')}
+            ${td('Furnace', esc(b.furnace_no || '—'))}
+            ${td('Process', `${esc(b.process_type || '—')}${b.temperature_c ? `<span class="sub">${fmt(b.temperature_c)}°C${b.soak_hours ? ` · target ${fmt(b.soak_hours)} h` : ''}</span>` : ''}`)}
+            ${td('Orders', new Set(items.map(i => i.order_uuid)).size, 'num')}
+            ${td('Out / Pcs', `<span class="strong">${sum(items.filter(i => i.time_out), i => i.qty)}</span> / ${sum(items, i => i.qty)}`, 'num')}
+            ${td('Batch Time', sp ? (sp.open ? `<span class="live" data-since="${new Date(sp.start).toISOString()}" data-target="0">${durText(sp.ms)}</span>` : `<span class="dur">${durText(sp.ms)}</span>`) : '—')}
+            ${td('Status', pill(b.status))}
+            ${td('Actions', `<div class="actions" onclick="event.stopPropagation()">${actBtn('ghost', 'history', 'View batch', `showHTBatch('${b.id}')`, true)}</div>`, 'act')}
+          </tr>`;
+        }), 'No furnace batches yet.');
+    }
+
+    function htUsage(bid) { return state.ht_usage.filter(u => u.ht_batch_id === bid).map(u => ({ id: u.consumable_id, name: u.consumable_name, unit: u.unit_of_measurement, qty: u.qty })); }
+
+    function showHTBatch(bid) {
+      const b = htBatch(bid);
+      if (!b) return closeModal();
+      const items = htItemsOfBatch(bid).sort((x, y) => x.time_in.localeCompare(y.time_in));
+      const open = items.filter(i => !i.time_out);
+      const sp = batchSpan(bid);
+      modal(`Furnace Batch · ${esc(b.batch_no)}`, `
+        ${summary([['Pieces', sum(items, i => i.qty)], ['Out', sum(items.filter(i => i.time_out), i => i.qty)], ['In Furnace', sum(open, i => i.qty)], ['Batch Time', sp ? durText(sp.ms) : '—'], ['Status', pill(b.status)]])}
+        <div class="row-meta">${moneyDate(b.ht_date)} · Furnace <b>${esc(b.furnace_no || '—')}</b> · <b>${esc(b.process_type || '—')}</b>${b.temperature_c ? ` at <b>${fmt(b.temperature_c)}°C</b>` : ''}${b.soak_hours ? ` · Target <b>${fmt(b.soak_hours)} h</b>` : ''} · ${esc(b.operator_name || 'Operator not set')}${b.remarks ? `<br>${esc(b.remarks)}` : ''}</div>
+        <div class="section-label">Products in this batch (${items.length})</div>
+        <div class="table-wrap">${htItemsTable(items, 'No castings in this batch.', true)}</div>
+        <div class="section-label">Heat treatment consumables</div>${usageTable(htUsage(bid), 'No consumables recorded.')}
+        <div class="form-actions" style="margin-top:16px">
+          <button class="btn danger" onclick="deleteHTBatch('${bid}')">${icon('trash', 'sm')}<span>Delete</span></button>
+          <button class="btn ghost" onclick="openHTBatchForm(null,'${bid}')">${icon('edit', 'sm')}<span>Edit Batch</span></button>
+          ${sendBtnOrders().length ? `<button class="btn secondary" onclick="openHTItemForm('${bid}')">${icon('plus', 'sm')}<span>Add Castings</span></button>` : ''}
+          ${open.length ? `<button class="btn primary" onclick="unloadAll('${bid}')">${icon('unload', 'sm')}<span>Unload All Now</span></button>` : ''}
+        </div>`, true);
+    }
+
+    function htOrderOptions(selected) {
+      return sendBtnOrders().map(o => `<option value="${o.id}" data-max="${htWaiting(o.id)}" ${o.id === selected ? 'selected' : ''}>${esc(o.order_id)} · ${esc(o.model_name)} (${htWaiting(o.id)} waiting)</option>`).join('');
+    }
+    function addHTLine(orderId) {
+      const box = document.getElementById('lines_htitems');
+      if (!box) return;
+      const row = document.createElement('div');
+      row.className = 'line';
+      row.innerHTML = `<select onchange="htLineMax(this)"><option value="">Select order / product</option>${htOrderOptions()}</select>
+        <input type="number" min="1" step="1" placeholder="Pcs">
+        <button type="button" class="btn small danger icon-only" onclick="this.parentNode.remove()" title="Remove line" aria-label="Remove line">${icon('close', 'sm')}</button>`;
+      box.appendChild(row);
+      if (orderId) { row.querySelector('select').value = orderId; htLineMax(row.querySelector('select')); }
+    }
+    function htLineMax(sel) {
+      const max = sel.selectedOptions[0]?.dataset.max;
+      const input = sel.parentNode.querySelector('input');
+      input.placeholder = max ? `Pcs (max ${max})` : 'Pcs';
+      if (max) input.value = max;
+    }
+    function collectHTLines() {
+      const out = {};
+      for (const row of document.querySelectorAll('#lines_htitems .line')) {
+        const sel = row.querySelector('select');
+        const qty = Math.floor(num(row.querySelector('input').value));
+        if (!sel.value && !qty) continue;
+        if (!sel.value || qty <= 0) { toast('Every line needs an order and pieces above 0', true); return null; }
+        out[sel.value] = (out[sel.value] || 0) + qty;
+      }
+      for (const [oid, qty] of Object.entries(out)) {
+        if (qty > htWaiting(oid)) { toast(`${orderById(oid).order_id}: only ${htWaiting(oid)} castings are waiting`, true); return null; }
+      }
+      return Object.entries(out).map(([order, qty]) => ({ order, qty }));
+    }
+
+    function openHTBatchForm(orderId, batchId) {
+      const b = batchId ? htBatch(batchId) : { ht_date: localToday(), process_type: HT_PROCESSES[0] };
+      if (!batchId && !sendBtnOrders().length) return toast('No poured castings are waiting for heat treatment', true);
+      modal(batchId ? `Edit Batch ${esc(b.batch_no)}` : 'New Furnace Batch', `<form class="form-grid" onsubmit="saveHTBatch(event,'${batchId || ''}')">
+        <div class="field"><label>Batch No</label><input value="${esc(b.batch_no || 'Auto: HTB-000001')}" disabled></div>
+        ${field('furnace_no', 'Furnace No', b.furnace_no || '', 'text')}
+        ${selectField('process_type', 'HT Process', b.process_type, HT_PROCESSES)}
+        ${field('temperature_c', 'Temperature (°C)', b.temperature_c ?? '', 'number')}
+        ${field('soak_hours', 'Target Soak Time (hours)', b.soak_hours ?? '', 'number')}
+        ${field('ht_date', 'Batch Date', b.ht_date, 'date', true)}
+        ${field('operator_name', 'HT Operator', b.operator_name || '', 'text')}
+        ${batchId ? '' : field('time_in', 'Furnace In Time', toLocalInput(), 'datetime-local', true)}
+        ${batchId ? '' : `<div class="field full"><div class="line-head"><label>Castings Loaded <span class="req">*</span></label><button type="button" class="btn small secondary" onclick="addHTLine()">${icon('plus', 'sm')}<span>Add order</span></button></div><div class="lines" id="lines_htitems"></div><div class="hint">Each product gets its own Out time — unload them one by one from the batch.</div></div>`}
+        ${lineBlock('lines_ht', 'Heat Treatment Consumables (Oil, Gas…)', 'ht', 'Add consumable')}
+        ${field('remarks', 'Remarks', b.remarks || '', 'textarea')}
+        ${formActions(batchId ? 'Update Batch' : 'Load in Furnace')}</form>`);
+      if (!batchId) addHTLine(orderId);
+      const usage = batchId ? htUsage(batchId) : [];
+      (usage.length ? usage : [{}]).forEach(u => addLine('lines_ht', 'ht', u));
+      if (!lineOptions('ht')) toast('No active Heat Treatment consumables in master. Add Oil / Gas in Consumables Master.', true);
+    }
+
+    async function saveHTBatch(event, batchId) {
+      event.preventDefault();
+      if (!validate(['ht_date', ...(batchId ? [] : ['time_in'])])) return;
+      const con = collectLines('lines_ht');
+      if (!con) return;
+      const items = batchId ? [] : collectHTLines();
+      if (!items) return;
+      if (!batchId && !items.length) return toast('Add at least one order with pieces', true);
+      const payload = {
+        furnace_no: val('furnace_no') || null, process_type: val('process_type'), ht_date: val('ht_date'), operator_name: val('operator_name') || null, remarks: val('remarks') || null,
+        temperature_c: val('temperature_c') === '' ? null : num(val('temperature_c')), soak_hours: val('soak_hours') === '' ? null : num(val('soak_hours'))
+      };
+      try {
+        let id = batchId;
+        if (batchId) {
+          await request(`ht_batches?id=eq.${batchId}`, { method: 'PATCH', body: JSON.stringify(payload) });
+          await request(`ht_consumable_usage?ht_batch_id=eq.${batchId}`, { method: 'DELETE' });
+        } else {
+          const [created] = await request('ht_batches', { method: 'POST', headers: REP, body: JSON.stringify(payload) });
+          id = created.id;
+          const timeIn = fromLocalInput(val('time_in'));
+          try {
+            await request('ht_items', { method: 'POST', body: JSON.stringify(items.map(i => ({ ht_batch_id: id, order_uuid: i.order, qty: i.qty, time_in: timeIn }))) });
+          } catch (err) {
+            await request(`ht_batches?id=eq.${id}`, { method: 'DELETE' }).catch(() => {});
+            throw err;
+          }
+        }
+        if (con.length) await request('ht_consumable_usage', { method: 'POST', body: JSON.stringify(con.map(l => ({ ht_batch_id: id, consumable_id: l.id, consumable_name: l.name, unit_of_measurement: l.unit, qty: l.qty }))) });
+        closeModal();
+        await refreshAll();
+        toast(batchId ? 'Batch updated' : `${sum(items, i => i.qty)} castings loaded in furnace`);
+      } catch (error) { toast(error.message, true); }
+    }
+
+    function openHTItemForm(batchId, itemId) {
+      const b = htBatch(batchId);
+      const i = state.ht_items.find(x => x.id === itemId);
+      const o = i ? orderById(i.order_uuid) : null;
+      modal(`${i ? 'Edit Product Time' : 'Add Castings'} · ${esc(b.batch_no)}`, `<form class="form-grid" onsubmit="saveHTItem(event,'${batchId}','${itemId || ''}')">
+        ${i ? ctxBox(o, `Batch ${esc(b.batch_no)} · ${esc(b.process_type || '')}`)
+            : `<div class="field full" data-field="ht_order"><label for="ht_order">Order / Product <span class="req">*</span></label><select id="ht_order" onchange="document.getElementById('ht_qty').value=this.selectedOptions[0]?.dataset.max||''"><option value="">Select order</option>${htOrderOptions()}</select><div class="error">Order is required</div></div>`}
+        ${field('ht_qty', 'Pieces', i ? i.qty : '', 'number', true)}
+        ${field('time_in', 'Furnace In Time', toLocalInput(i?.time_in), 'datetime-local', true)}
+        ${field('time_out', 'Furnace Out Time', i?.time_out ? toLocalInput(i.time_out) : '', 'datetime-local')}
+        ${field('remarks', 'Remarks', i?.remarks || '', 'textarea')}
+        <div class="field full hint">Leave Out Time empty while the product is still in the furnace.</div>
+        ${formActions(i ? 'Save Times' : 'Add to Batch')}</form>`);
+    }
+
+    async function saveHTItem(event, batchId, itemId) {
+      event.preventDefault();
+      if (!validate(['ht_qty', 'time_in', ...(itemId ? [] : ['ht_order'])])) return;
+      const i = state.ht_items.find(x => x.id === itemId);
+      const oid = i ? i.order_uuid : val('ht_order');
+      const qty = Math.floor(num(val('ht_qty')));
+      const tIn = fromLocalInput(val('time_in'));
+      const tOut = fromLocalInput(val('time_out'));
+      const max = htWaiting(oid) + num(i?.qty);
+      if (qty <= 0) return toast('Pieces must be more than 0', true);
+      if (qty > max) return toast(`Only ${max} castings are available for this order`, true);
+      if (tOut && tOut < tIn) return toast('Out time cannot be before In time', true);
+      const payload = { qty, time_in: tIn, time_out: tOut, remarks: val('remarks') || null };
+      try {
+        if (i) await request(`ht_items?id=eq.${itemId}`, { method: 'PATCH', body: JSON.stringify(payload) });
+        else await request('ht_items', { method: 'POST', body: JSON.stringify({ ...payload, ht_batch_id: batchId, order_uuid: oid }) });
+        await refreshAll();
+        toast(i ? 'Times updated' : 'Castings added to batch');
+        showHTBatch(batchId);
+      } catch (error) { toast(error.message, true); }
+    }
+
+    async function unloadHTItem(itemId, reopen) {
+      const i = state.ht_items.find(x => x.id === itemId);
+      try {
+        await request(`ht_items?id=eq.${itemId}`, { method: 'PATCH', body: JSON.stringify({ time_out: new Date().toISOString() }) });
+        await refreshAll();
+        const done = state.ht_items.find(x => x.id === itemId);
+        toast(`${num(i.qty)} pcs ${orderById(i.order_uuid)?.model_name || ''} unloaded · HT time ${durText(itemDur(done || i))}`);
+        if (reopen) showHTBatch(i.ht_batch_id);
+      } catch (error) { toast(error.message, true); }
+    }
+
+    async function unloadAll(batchId) {
+      if (!confirm('Unload every product still in this batch with the current time?')) return;
+      try {
+        await request(`ht_items?ht_batch_id=eq.${batchId}&time_out=is.null`, { method: 'PATCH', body: JSON.stringify({ time_out: new Date().toISOString() }) });
+        await refreshAll();
+        toast('All products unloaded');
+        showHTBatch(batchId);
+      } catch (error) { toast(error.message, true); }
+    }
+
+    function htRemovalBlocked(items) {
+      const byOrder = {};
+      items.filter(i => i.time_out).forEach(i => { byOrder[i.order_uuid] = (byOrder[i.order_uuid] || 0) + num(i.qty); });
+      return Object.entries(byOrder).find(([oid, q]) => htDone(oid) - q < fettledOk(oid) + fettledRej(oid));
+    }
+
+    async function deleteHTItem(itemId) {
+      const i = state.ht_items.find(x => x.id === itemId);
+      if (htRemovalBlocked([i])) return toast('Cannot remove: these pieces are already fettled', true);
+      if (!confirm(`Remove ${i.qty} pcs from this batch? They will go back to "Waiting".`)) return;
+      try {
+        await request(`ht_items?id=eq.${itemId}`, { method: 'DELETE' });
+        await refreshAll();
+        toast('Removed from batch');
+        showHTBatch(i.ht_batch_id);
+      } catch (error) { toast(error.message, true); }
+    }
+
+    async function deleteHTBatch(batchId) {
+      if (htRemovalBlocked(htItemsOfBatch(batchId))) return toast('Cannot delete: pieces from this batch are already fettled', true);
+      if (!confirm('Delete this furnace batch? Its castings will go back to "Waiting".')) return;
+      try {
+        await request(`ht_batches?id=eq.${batchId}`, { method: 'DELETE' });
+        closeModal();
+        await refreshAll();
+        toast('Batch deleted');
+      } catch (error) { toast(error.message, true); }
+    }
+
+    /* ========================= FETTLING & FINISHING ========================= */
+    function renderFettling() {
+      if (!flowGuard('fettling', 'Fettling & Finishing')) return;
+      const q = (state.search.fettling || '').toLowerCase();
+      const tab = state.filter.fettling;
+      const orders = state.orders.filter(o => FLOW_ORDER(o) && htDone(o.id) > 0);
+      const rows = orders.filter(o => (tab === 'All' || fettleWaiting(o.id) > 0) && orderMatch(o, q));
+      const ok = sum(state.fettling_entries, e => e.qty_ok);
+      const rej = sum(state.fettling_entries, e => e.qty_rejected);
+      const todayOk = sum(state.fettling_entries.filter(e => e.entry_date === localToday()), e => e.qty_ok);
+      const recent = state.fettling_entries.slice(0, 10);
+      document.getElementById('fettling').innerHTML =
+        header('Fettling & Finishing', 'Heat-treated castings — grinding, welding, painting and final finishing') +
+        statCards([['Waiting (pcs)', sum(orders, o => fettleWaiting(o.id)), 'clock', 'amber'], ['Finished Today', todayOk, 'status', 'teal'], ['Total Finished', ok, 'check', 'green'],
+          ['Rejected', rej, 'close', 'red'], ['Rejection %', ok + rej ? `${(rej / (ok + rej) * 100).toFixed(1)}%` : '—', 'weight', 'orange'], ['In Stock', sum(state.orders.filter(FLOW_ORDER), o => stockQty(o.id)), 'stock', 'blue']]) +
+        `<div style="margin-bottom:14px">${tabs('fettling', ['Waiting', 'All'], 'renderFettling', { Waiting: orders.filter(o => fettleWaiting(o.id) > 0).length, All: orders.length })}</div>` +
+        tablePanel('Fettling Queue', rows.length, searchBox('fettling', 'Search order, model or customer', 'renderFettling'),
+          dataTable([['Order', ''], ['Product / Customer', ''], ['Delivery', ''], ['Order Qty', 'num'], ['HT Done', 'num'], ['Finished', 'num'], ['Rejected', 'num'], ['Waiting', 'num'], ['Progress', 'wide'], ['Actions', 'act']],
+            rows.map(o => `<tr class="click" onclick="showFettlingHistory('${o.id}')">
+              ${td('Order', `<span class="mono">${esc(o.order_id)}</span>`, 'lead nowrap')}
+              ${td('Product', orderCell(o))}
+              ${td('Delivery', dueDate(o), 'nowrap')}
+              ${td('Order Qty', esc(o.quantity), 'num')}
+              ${td('HT Done', htDone(o.id), 'num')}
+              ${td('Finished', `<span class="strong">${fettledOk(o.id)}</span>`, 'num')}
+              ${td('Rejected', fettledRej(o.id) ? `<span class="late">${fettledRej(o.id)}</span>` : 0, 'num')}
+              ${td('Waiting', `<span class="strong">${fettleWaiting(o.id)}</span>`, 'num')}
+              ${td('Progress', progress(fettledOk(o.id), num(o.quantity)))}
+              ${td('Actions', `<div class="actions" onclick="event.stopPropagation()">
+                ${fettleWaiting(o.id) ? actBtn('primary', 'plus', 'Add Finished', `openFettlingEntry('${o.id}')`) : ''}
+                ${actBtn('ghost', 'history', 'History', `showFettlingHistory('${o.id}')`, true)}
+              </div>`, 'act')}
+            </tr>`), orders.length ? 'Nothing waiting in this view.' : 'No heat-treated castings yet. Products appear here after they are unloaded from the furnace.')) +
+        tablePanel('Recent Finishing Entries', recent.length, '', fettleEntriesTable(recent, true));
+    }
+
+    function fettleUsage(filterFn) { return state.fettling_usage.filter(filterFn).map(u => ({ name: u.consumable_name, unit: u.unit_of_measurement, qty: u.qty })); }
+
+    function fettleEntriesTable(list, withOrder, orderIdForDelete) {
+      return dataTable([['Date', ''], ...(withOrder ? [['Order / Product', '']] : []), ['OK', 'num'], ['Rejected', 'num'], ['Operator', ''], ['Consumables', ''], ...(withOrder ? [] : [['', 'act']])],
+        list.map(e => {
+          const o = orderById(e.order_uuid) || {};
+          return `<tr ${withOrder ? `class="click" onclick="showFettlingHistory('${e.order_uuid}')"` : ''}>
+            ${td('Date', `<span class="strong">${moneyDate(e.entry_date)}</span>`, 'lead nowrap')}
+            ${withOrder ? td('Order', `<span class="mono">${esc(o.order_id || '—')}</span><span class="sub">${esc(o.model_name || '')}</span>`) : ''}
+            ${td('OK', `<span class="strong">${num(e.qty_ok)}</span>`, 'num')}
+            ${td('Rejected', num(e.qty_rejected) ? `<span class="late">${num(e.qty_rejected)}</span>` : 0, 'num')}
+            ${td('Operator', esc(e.operator_name || '—'))}
+            ${td('Consumables', usageChips(fettleUsage(u => u.fettling_entry_id === e.id)))}
+            ${withOrder ? '' : td('', `<div class="actions">${actBtn('danger', 'trash', 'Delete entry', `deleteFettlingEntry('${e.id}')`, true)}</div>`, 'act')}
+          </tr>`;
+        }), 'No finishing entries yet.');
+    }
+
+    function openFettlingEntry(orderId) {
+      const o = orderById(orderId);
+      const waiting = fettleWaiting(orderId);
+      modal(`Fettling & Finishing · ${esc(o.order_id)}`, `<form class="form-grid" onsubmit="saveFettlingEntry(event,'${orderId}')">
+        ${ctxBox(o, `Heat treated: <b>${htDone(orderId)}</b> · Finished: <b>${fettledOk(orderId)}</b> · Waiting: <b>${waiting}</b>`)}
+        ${field('qty_ok', 'Finished OK (pcs)', waiting, 'number', true)}
+        ${field('qty_rejected', 'Rejected (pcs)', 0, 'number')}
+        ${field('entry_date', 'Work Date', localToday(), 'date', true)}
+        ${field('operator_name', 'Fettling Person', '', 'text')}
+        ${lineBlock('lines_fettle', 'Fettling & Finishing Consumables (discs, rods, paint…)', 'fettle', 'Add consumable')}
+        ${field('remarks', 'Remarks / Rejection reason', '', 'textarea')}
+        ${formActions('Save Entry')}</form>`);
+      addLine('lines_fettle', 'fettle');
+      if (!lineOptions('fettle')) toast('No active Fettling consumables in master. Add them in Consumables Master.', true);
+    }
+
+    async function saveFettlingEntry(event, orderId) {
+      event.preventDefault();
+      if (!validate(['qty_ok', 'entry_date'])) return;
+      const ok = Math.floor(num(val('qty_ok')));
+      const rej = Math.floor(num(val('qty_rejected')));
+      const waiting = fettleWaiting(orderId);
+      if (ok + rej <= 0) return toast('Enter finished or rejected pieces', true);
+      if (ok + rej > waiting) return toast(`Only ${waiting} heat-treated pieces are waiting`, true);
+      const lines = collectLines('lines_fettle');
+      if (!lines) return;
+      try {
+        const [entry] = await request('fettling_entries', { method: 'POST', headers: REP, body: JSON.stringify({ order_uuid: orderId, entry_date: val('entry_date'), qty_ok: ok, qty_rejected: rej, operator_name: val('operator_name') || null, remarks: val('remarks') || null }) });
+        if (lines.length) await request('fettling_consumable_usage', { method: 'POST', body: JSON.stringify(lines.map(l => ({ fettling_entry_id: entry.id, order_uuid: orderId, consumable_id: l.id, consumable_name: l.name, unit_of_measurement: l.unit, qty: l.qty }))) });
+        closeModal();
+        await refreshAll();
+        toast(`${ok} pcs finished${rej ? `, ${rej} rejected` : ''} — added to stock`);
+      } catch (error) { toast(error.message, true); }
+    }
+
+    function showFettlingHistory(orderId) {
+      const o = orderById(orderId);
+      const entries = fettleFor(orderId);
+      modal(`Finishing History · ${esc(o.order_id)}`, `
+        ${summary([['HT Done', htDone(orderId)], ['Finished', fettledOk(orderId)], ['Rejected', fettledRej(orderId)], ['Waiting', fettleWaiting(orderId)], ['Dispatched', dispatchedQty(orderId)]])}
+        ${progress(fettledOk(orderId), num(o.quantity))}
+        <div class="section-label">Total consumables used</div>${usageTable(totalsByItem(fettleUsage(u => u.order_uuid === orderId)), 'No consumables recorded.')}
+        <div class="section-label">Entries (${entries.length})</div>
+        ${fettleEntriesTable(entries, false)}
+        <div class="form-actions" style="margin-top:16px"><button class="btn ghost" onclick="closeModal()">Close</button>${fettleWaiting(orderId) ? `<button class="btn primary" onclick="openFettlingEntry('${orderId}')">${icon('plus', 'sm')}<span>Add Finished</span></button>` : ''}</div>`);
+    }
+
+    async function deleteFettlingEntry(entryId) {
+      const e = state.fettling_entries.find(x => x.id === entryId);
+      if (fettledOk(e.order_uuid) - num(e.qty_ok) < dispatchedQty(e.order_uuid)) return toast('Cannot delete: these pieces are already dispatched', true);
+      if (!confirm(`Delete this entry (${e.qty_ok} OK, ${e.qty_rejected} rejected)?`)) return;
+      try {
+        await request(`fettling_entries?id=eq.${entryId}`, { method: 'DELETE' });
+        await refreshAll();
+        toast('Entry deleted');
+        showFettlingHistory(e.order_uuid);
+      } catch (error) { toast(error.message, true); }
+    }
+
+    /* ============================ STOCK INVENTORY ============================ */
+    function stageOf(o) {
+      if (o.status === 'Delivered' || (num(o.quantity) > 0 && dispatchedQty(o.id) >= num(o.quantity))) return pill('Delivered');
+      if (stockQty(o.id) > 0) return pill('In Stock');
+      if (fettleWaiting(o.id) > 0) return pill('Fettling');
+      if (htInFurnace(o.id) > 0) return pill('In Furnace');
+      if (htWaiting(o.id) > 0) return pill('Waiting HT', 'WaitingHT');
+      if (batchesFor(o.id).length || availableMolds(o.id) > 0) return pill('Melting');
+      if (num(jobFor(o.id)?.molds_made) > 0) return pill('Molding', 'InProgress');
+      return pill('Not Started');
+    }
+
+    function renderStock() {
+      if (!flowGuard('stock', 'Stock Inventory')) return;
+      const q = (state.search.stock || '').toLowerCase();
+      const tab = state.filter.stock;
+      const orders = state.orders.filter(FLOW_ORDER);
+      const inStock = orders.filter(o => stockQty(o.id) > 0);
+      const wip = sum(orders, o => Math.max(pouredDone(o.id) - fettledOk(o.id) - fettledRej(o.id), 0));
+      const byProduct = {};
+      orders.filter(o => fettledOk(o.id) > 0).forEach(o => {
+        const k = o.product_id || o.model_id;
+        const r = byProduct[k] = byProduct[k] || { o, orders: 0, finished: 0, sent: 0, stock: 0 };
+        r.orders++; r.finished += fettledOk(o.id); r.sent += dispatchedQty(o.id); r.stock += stockQty(o.id);
+      });
+      let body;
+      if (tab === 'By Product') {
+        const rows = Object.values(byProduct).filter(r => `${r.o.model_name} ${r.o.model_id}`.toLowerCase().includes(q)).sort((a, b) => b.stock - a.stock);
+        body = tablePanel('Finished stock by product', rows.length, searchBox('stock', 'Search product or model', 'renderStock'),
+          dataTable([['Product', ''], ['Orders', 'num'], ['Finished', 'num'], ['Dispatched', 'num'], ['In Stock', 'num']],
+            rows.map(r => `<tr>${td('Product', prodCell(r.o.product_image_url, r.o.model_name, r.o.model_id), 'lead')}${td('Orders', r.orders, 'num')}${td('Finished', r.finished, 'num')}${td('Dispatched', r.sent, 'num')}${td('In Stock', `<span class="strong">${r.stock}</span>`, 'num')}</tr>`),
+            'No finished products yet.'));
+      } else if (tab === 'Pipeline') {
+        const rows = orders.filter(o => o.status !== 'Delivered' && orderMatch(o, q));
+        body = tablePanel('Where every order is (pieces at each stage)', rows.length, searchBox('stock', 'Search order, model or customer', 'renderStock'),
+          dataTable([['Order', ''], ['Product / Customer', ''], ['Qty', 'num'], ['Molds', 'num'], ['Poured', 'num'], ['Wait HT', 'num'], ['In Furnace', 'num'], ['Fettling', 'num'], ['Finished', 'num'], ['Rejected', 'num'], ['Dispatched', 'num'], ['Stage', '']],
+            rows.map(o => `<tr class="click" onclick="showOrderDetail('${o.id}')">
+              ${td('Order', `<span class="mono">${esc(o.order_id)}</span>`, 'lead nowrap')}
+              ${td('Product', orderCell(o))}
+              ${td('Qty', `<span class="strong">${esc(o.quantity)}</span>`, 'num')}
+              ${td('Molds', num(jobFor(o.id)?.molds_made), 'num')}
+              ${td('Poured', pouredDone(o.id), 'num')}
+              ${td('Wait HT', htWaiting(o.id), 'num')}
+              ${td('In Furnace', htInFurnace(o.id), 'num')}
+              ${td('Fettling', fettleWaiting(o.id), 'num')}
+              ${td('Finished', fettledOk(o.id), 'num')}
+              ${td('Rejected', fettledRej(o.id), 'num')}
+              ${td('Dispatched', dispatchedQty(o.id), 'num')}
+              ${td('Stage', stageOf(o))}
+            </tr>`), 'No open orders.'));
+      } else {
+        const rows = orders.filter(o => fettledOk(o.id) > 0 && orderMatch(o, q)).sort((a, b) => stockQty(b.id) - stockQty(a.id));
+        body = tablePanel('Finished stock by order', rows.length, searchBox('stock', 'Search order, model or customer', 'renderStock'),
+          dataTable([['Order', ''], ['Product / Customer', ''], ['Delivery', ''], ['Order Qty', 'num'], ['Finished', 'num'], ['Dispatched', 'num'], ['In Stock', 'num'], ['Balance to Make', 'num'], ['Actions', 'act']],
+            rows.map(o => `<tr class="click" onclick="showOrderDetail('${o.id}')">
+              ${td('Order', `<span class="mono">${esc(o.order_id)}</span>`, 'lead nowrap')}
+              ${td('Product', orderCell(o))}
+              ${td('Delivery', dueDate(o), 'nowrap')}
+              ${td('Order Qty', esc(o.quantity), 'num')}
+              ${td('Finished', fettledOk(o.id), 'num')}
+              ${td('Dispatched', dispatchedQty(o.id), 'num')}
+              ${td('In Stock', `<span class="strong">${stockQty(o.id)}</span>`, 'num')}
+              ${td('Balance to Make', Math.max(num(o.quantity) - fettledOk(o.id), 0), 'num')}
+              ${td('Actions', `<div class="actions" onclick="event.stopPropagation()">${stockQty(o.id) ? actBtn('primary', 'dispatch', 'Dispatch', `navigate('dispatch'); openDispatchForm('${o.id}')`) : pill('Dispatched')}</div>`, 'act')}
+            </tr>`), 'No finished products yet. Stock is added from Fettling & Finishing.'));
+      }
+      document.getElementById('stock').innerHTML =
+        header('Stock Inventory', 'Ready finished products — added from Fettling, reduced by Dispatch') +
+        statCards([['In Stock (pcs)', sum(inStock, o => stockQty(o.id)), 'stock', 'green'], ['Orders with Stock', inStock.length, 'orders', 'orange'], ['Products in Stock', Object.values(byProduct).filter(r => r.stock > 0).length, 'products', 'blue'],
+          ['Work in Progress (pcs)', wip, 'melting', 'amber'], ['Dispatched (pcs)', sum(state.dispatches, d => d.qty), 'dispatch', 'teal'], ['Rejected (pcs)', sum(state.fettling_entries, e => e.qty_rejected), 'close', 'red']]) +
+        `<div style="margin-bottom:14px">${tabs('stock', ['By Order', 'By Product', 'Pipeline'], 'renderStock')}</div>` + body;
+    }
+
+    /* ================================ DISPATCH ================================ */
+    function renderDispatch() {
+      if (!flowGuard('dispatch', 'Dispatch')) return;
+      const q = (state.search.dispatch || '').toLowerCase();
+      const ready = state.orders.filter(o => FLOW_ORDER(o) && stockQty(o.id) > 0);
+      const list = state.dispatches.filter(d => { const o = orderById(d.order_uuid) || {}; return `${d.dispatch_no} ${d.challan_no || ''} ${d.vehicle_no || ''} ${o.order_id} ${o.model_name} ${o.customer_name}`.toLowerCase().includes(q); });
+      const todayQ = sum(state.dispatches.filter(d => d.dispatch_date === localToday()), d => d.qty);
+      document.getElementById('dispatch').innerHTML =
+        header('Dispatch', 'Send finished stock to customers with challan and vehicle details') +
+        statCards([['Ready to Dispatch (pcs)', sum(ready, o => stockQty(o.id)), 'stock', 'green'], ['Orders Ready', ready.length, 'orders', 'orange'], ['Dispatched Today (pcs)', todayQ, 'dispatch', 'teal'],
+          ['Total Dispatched (pcs)', sum(state.dispatches, d => d.qty), 'check', 'blue'], ['Dispatches', state.dispatches.length, 'history', 'amber'], ['Orders Delivered', state.orders.filter(o => o.status === 'Delivered').length, 'flag', 'green']]) +
+        tablePanel('Ready to Dispatch', ready.length, '',
+          dataTable([['Order', ''], ['Product / Customer', ''], ['Delivery', ''], ['Order Qty', 'num'], ['Dispatched', 'num'], ['In Stock', 'num'], ['Progress', 'wide'], ['Actions', 'act']],
+            ready.map(o => `<tr>
+              ${td('Order', `<span class="mono">${esc(o.order_id)}</span>`, 'lead nowrap')}
+              ${td('Product', orderCell(o))}
+              ${td('Delivery', dueDate(o), 'nowrap')}
+              ${td('Order Qty', esc(o.quantity), 'num')}
+              ${td('Dispatched', dispatchedQty(o.id), 'num')}
+              ${td('In Stock', `<span class="strong">${stockQty(o.id)}</span>`, 'num')}
+              ${td('Progress', progress(dispatchedQty(o.id), num(o.quantity)))}
+              ${td('Actions', `<div class="actions">${actBtn('primary', 'dispatch', 'Dispatch', `openDispatchForm('${o.id}')`)}</div>`, 'act')}
+            </tr>`), 'No finished stock to dispatch.')) +
+        tablePanel('Dispatch Register', list.length, searchBox('dispatch', 'Search dispatch no, challan, vehicle, order', 'renderDispatch'),
+          dataTable([['Dispatch No', ''], ['Date', ''], ['Order / Product', ''], ['Customer', ''], ['Qty', 'num'], ['Challan / Invoice', ''], ['Vehicle / Driver', ''], ['Actions', 'act']],
+            list.map(d => {
+              const o = orderById(d.order_uuid) || {};
+              return `<tr>
+                ${td('Dispatch No', `<span class="mono">${esc(d.dispatch_no)}</span>`, 'lead nowrap')}
+                ${td('Date', moneyDate(d.dispatch_date), 'nowrap')}
+                ${td('Order', `<span class="mono">${esc(o.order_id || '—')}</span><span class="sub">${esc(o.model_name || '')}</span>`)}
+                ${td('Customer', `<span class="strong">${esc(o.customer_name || '—')}</span>`)}
+                ${td('Qty', `<span class="strong">${num(d.qty)}</span>`, 'num')}
+                ${td('Challan', `${esc(d.challan_no || '—')}${d.invoice_no ? `<span class="sub">Inv ${esc(d.invoice_no)}</span>` : ''}`)}
+                ${td('Vehicle', `${esc(d.vehicle_no || '—')}${d.driver_name ? `<span class="sub">${esc(d.driver_name)}${d.driver_mobile ? ` · ${esc(d.driver_mobile)}` : ''}</span>` : ''}`)}
+                ${td('Actions', `<div class="actions">${actBtn('secondary', 'print', 'Challan', `printChallan('${d.id}')`)}${actBtn('ghost', 'edit', 'Edit', `openDispatchForm('${d.order_uuid}','${d.id}')`, true)}${actBtn('danger', 'trash', 'Delete', `deleteDispatch('${d.id}')`, true)}</div>`, 'act')}
+              </tr>`;
+            }), 'No dispatches yet.'));
+    }
+
+    function openDispatchForm(orderId, dispatchId) {
+      const o = orderById(orderId);
+      const d = state.dispatches.find(x => x.id === dispatchId) || { dispatch_date: localToday() };
+      const max = stockQty(orderId) + num(d.qty);
+      modal(`${dispatchId ? 'Edit Dispatch ' + esc(d.dispatch_no) : 'New Dispatch'} · ${esc(o.order_id)}`, `<form class="form-grid" onsubmit="saveDispatch(event,'${orderId}','${dispatchId || ''}')">
+        ${ctxBox(o, `In stock: <b>${max}</b> · Already dispatched: <b>${dispatchedQty(orderId) - num(d.qty)}</b> of ${esc(o.quantity)}`)}
+        <div class="field"><label>Dispatch No</label><input value="${esc(d.dispatch_no || 'Auto: DSP-000001')}" disabled></div>
+        ${field('dispatch_date', 'Dispatch Date', d.dispatch_date, 'date', true)}
+        <div class="field" data-field="dqty"><label for="dqty">Quantity (pcs) <span class="req">*</span></label><input id="dqty" type="number" min="1" max="${max}" step="1" value="${esc(dispatchId ? d.qty : max)}"><div class="hint">Max ${max}</div><div class="error">Quantity is required</div></div>
+        ${field('challan_no', 'Challan No', d.challan_no || '', 'text')}
+        ${field('invoice_no', 'Invoice No', d.invoice_no || '', 'text')}
+        ${field('vehicle_no', 'Vehicle No', d.vehicle_no || '', 'text')}
+        ${field('transporter', 'Transporter', d.transporter || '', 'text')}
+        ${field('driver_name', 'Driver Name', d.driver_name || '', 'text')}
+        ${field('driver_mobile', 'Driver Mobile', d.driver_mobile || '', 'tel')}
+        ${field('remarks', 'Remarks', d.remarks || '', 'textarea')}
+        ${formActions(dispatchId ? 'Update Dispatch' : 'Dispatch')}</form>`);
+    }
+
+    async function saveDispatch(event, orderId, dispatchId) {
+      event.preventDefault();
+      if (!validate(['dispatch_date', 'dqty'])) return;
+      const d = state.dispatches.find(x => x.id === dispatchId);
+      const max = stockQty(orderId) + num(d?.qty);
+      const qty = Math.floor(num(val('dqty')));
+      if (qty <= 0) return toast('Quantity must be more than 0', true);
+      if (qty > max) return toast(`Only ${max} pcs are in stock`, true);
+      const payload = { order_uuid: orderId, dispatch_date: val('dispatch_date'), qty, challan_no: val('challan_no') || null, invoice_no: val('invoice_no') || null, vehicle_no: val('vehicle_no') || null, transporter: val('transporter') || null, driver_name: val('driver_name') || null, driver_mobile: val('driver_mobile') || null, remarks: val('remarks') || null };
+      try {
+        let saved;
+        if (dispatchId) [saved] = await request(`dispatches?id=eq.${dispatchId}`, { method: 'PATCH', headers: REP, body: JSON.stringify(payload) });
+        else [saved] = await request('dispatches', { method: 'POST', headers: REP, body: JSON.stringify(payload) });
+        closeModal();
+        await refreshAll();
+        const o = orderById(orderId);
+        toast(`${saved.dispatch_no}: ${qty} pcs dispatched${o?.status === 'Delivered' ? ' — order Delivered' : ''}`);
+      } catch (error) { toast(error.message, true); }
+    }
+
+    async function deleteDispatch(id) {
+      const d = state.dispatches.find(x => x.id === id);
+      if (!confirm(`Delete dispatch ${d.dispatch_no}? ${d.qty} pcs will return to stock.`)) return;
+      try {
+        await request(`dispatches?id=eq.${id}`, { method: 'DELETE' });
+        await refreshAll();
+        toast('Dispatch deleted — stock restored');
+      } catch (error) { toast(error.message, true); }
+    }
+
+    function printChallan(id) {
+      const d = state.dispatches.find(x => x.id === id);
+      const o = orderById(d.order_uuid) || {};
+      const w = window.open('', '_blank');
+      if (!w) return toast('Allow pop-ups to print the challan', true);
+      const row = (k, v) => `<tr><th>${k}</th><td>${esc(v || '—')}</td></tr>`;
+      w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Delivery Challan ${esc(d.dispatch_no)}</title><style>
+        body{font-family:Arial,sans-serif;color:#111;margin:32px;max-width:760px}h1{font-size:22px;margin:0}h2{font-size:14px;color:#555;margin:4px 0 20px;font-weight:normal}
+        table{width:100%;border-collapse:collapse;margin-bottom:18px}th,td{border:1px solid #bbb;padding:8px 10px;text-align:left;font-size:13px}th{background:#f3f3f3;width:32%}
+        .items th{width:auto}.sign{display:flex;justify-content:space-between;margin-top:60px;font-size:13px}.sign div{border-top:1px solid #333;padding-top:6px;width:200px;text-align:center}
+        @media print{button{display:none}}</style></head><body>
+        <h1>Delivery Challan</h1><h2>Metal Casting ERP · ${esc(d.dispatch_no)}</h2>
+        <table>${row('Dispatch No', d.dispatch_no)}${row('Dispatch Date', moneyDate(d.dispatch_date))}${row('Challan No', d.challan_no)}${row('Invoice No', d.invoice_no)}${row('Customer', o.customer_name)}${row('Customer Mobile', o.customer_mobile)}${row('Order No', o.order_id)}</table>
+        <table class="items"><tr><th>#</th><th>Product</th><th>Model ID</th><th>Quantity (pcs)</th></tr><tr><td>1</td><td>${esc(o.model_name)}</td><td>${esc(o.model_id)}</td><td>${num(d.qty)}</td></tr></table>
+        <table>${row('Vehicle No', d.vehicle_no)}${row('Transporter', d.transporter)}${row('Driver', d.driver_name)}${row('Driver Mobile', d.driver_mobile)}${row('Remarks', d.remarks)}</table>
+        <div class="sign"><div>Receiver's Signature</div><div>Authorised Signatory</div></div>
+        <p><button onclick="print()">Print</button></p></body></html>`);
+      w.document.close();
+      w.focus();
     }
 
     document.getElementById('sideMark').innerHTML = icon('logo');
