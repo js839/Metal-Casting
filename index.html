@@ -974,7 +974,7 @@
     }
     function showOrderDetail(id) {
       const o = state.orders.find(x => x.id === id);
-      details(`Order ${esc(o.order_id || '')}`, [['Order ID', `<span class="mono">${esc(o.order_id)}</span>`], ['Model Name', esc(o.model_name)], ['Model ID', `<span class="mono">${esc(o.model_id)}</span>`], ['Customer', esc(o.customer_name)], ['Mobile', esc(o.customer_mobile || '—')], ['Grade', esc(o.grade || '—')], ['Quantity', esc(o.quantity)], ['Order Date', moneyDate(o.order_date)], ['Delivery Date', dueDate(o)], ['Status', pill(o.status)], ['Molds Made', state.productionReady ? `${num(jobFor(o.id)?.molds_made)} / ${num(jobFor(o.id)?.molds_required ?? o.quantity)}` : '—'], ['Molds Poured', state.productionReady ? String(pouredFor(o.id)) : '—'], ...(state.flowReady ? [['Heat Treated', `${htDone(o.id)} pcs${htLoaded(o.id) - htDone(o.id) ? ` <span class="sub">${htLoaded(o.id) - htDone(o.id)} in furnace</span>` : ''}`], ['Finished (OK / Rejected)', `${fettledOk(o.id)} / ${fettledRej(o.id)}`], ['Dispatched', `${dispatchedQty(o.id)} of ${esc(o.quantity)}`], ['In Stock', String(stockQty(o.id))]] : []), ['Remarks', esc(o.remarks || '—')]],
+      details(`Order ${esc(o.order_id || '')}`, [['Order ID', `<span class="mono">${esc(o.order_id)}</span>`], ['Model Name', esc(o.model_name)], ['Model ID', `<span class="mono">${esc(o.model_id)}</span>`], ['Customer', esc(o.customer_name)], ['Mobile', esc(o.customer_mobile || '—')], ['Grade', esc(o.grade || '—')], ['Quantity', esc(o.quantity)], ['Order Date', moneyDate(o.order_date)], ['Delivery Date', dueDate(o)], ['Status', pill(o.status)], ['Molds Made', state.productionReady ? `${num(jobFor(o.id)?.molds_made)} / ${num(jobFor(o.id)?.molds_required ?? o.quantity)}` : '—'], ['Molds Poured', state.productionReady ? String(pouredFor(o.id)) : '—'], ['Casting Rejected', state.productionReady ? (castRejected(o.id) ? `<span class="late">${castRejected(o.id)}</span> <span class="sub">good ${pouredGood(o.id)}</span>` : '0') : '—'], ...(state.flowReady ? [['Heat Treated', `${htDone(o.id)} pcs${htLoaded(o.id) - htDone(o.id) ? ` <span class="sub">${htLoaded(o.id) - htDone(o.id)} in furnace</span>` : ''}`], ['Finished (OK / Rejected)', `${fettledOk(o.id)} / ${fettledRej(o.id)}`], ['Dispatched', `${dispatchedQty(o.id)} of ${esc(o.quantity)}`], ['In Stock', String(stockQty(o.id))]] : []), ['Remarks', esc(o.remarks || '—')]],
         `<button class="btn danger" onclick="save('orders','${id}',{status:'Cancelled'},'Order cancelled')">${icon('close', 'sm')}<span>Cancel Order</span></button><button class="btn secondary" onclick="openStatusForm('${id}')">${icon('status', 'sm')}<span>Update Status</span></button><button class="btn primary" onclick="openOrderForm('${id}')">${icon('edit', 'sm')}<span>Edit Order</span></button>`,
         detailTop(o.product_image_url, o.model_name, `${esc(o.model_id)} · ${esc(o.customer_name)} · Qty ${esc(o.quantity)}`, pill(o.status)));
     }
@@ -1226,7 +1226,7 @@
       const recent = [...state.melting_batches].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 10);
       document.getElementById('melting').innerHTML =
         header('Melting & Pouring', 'Orders with ready molds — melt raw material and pour (one heat can pour several orders)', avail ? `<button class="btn primary" onclick="openMeltingForm()">${icon('plus', 'sm')}<span>New Heat (multiple orders)</span></button>` : '') +
-        statCards([['Orders with Molds', withMolds.length, 'orders', 'orange'], ['Molds to Pour', avail, 'molding', 'amber'], ['Active Heats', running, 'melting', 'red'], ['Total Heats', state.melting_batches.length, 'history', 'blue'], ['Melted (kg)', fmt(meltKg), 'weight', 'teal'], ['Poured (kg)', fmt(pouredKg), 'check', 'green']]) +
+        statCards([['Orders with Molds', withMolds.length, 'orders', 'orange'], ['Molds to Pour', avail, 'molding', 'amber'], ['Active Heats', running, 'melting', 'red'], ['Total Heats', state.melting_batches.length, 'history', 'blue'], ['Melted (kg)', fmt(meltKg), 'weight', 'teal'], ['Poured (kg)', fmt(pouredKg), 'check', 'green'], ['Castings Rejected', sum(state.melting_orders, l => l.molds_rejected), 'close', 'red']]) +
         `<div style="margin-bottom:14px">${tabs('melting', tabList, 'renderMelting', counts)}</div>` +
         tablePanel('Pouring Queue', rows.length, searchBox('melting', 'Search order, model or customer', 'renderMelting'),
           dataTable(
@@ -1246,7 +1246,7 @@
         ${td('Product', prodCell(o.product_image_url, o.model_name, `${o.model_id} · ${o.customer_name}`))}
         ${td('Delivery', dueDate(o), 'nowrap')}
         ${td('Made', made, 'num')}
-        ${td('Poured', poured, 'num')}
+        ${td('Poured', `${poured}${castRejected(o.id) ? `<span class="sub late">${castRejected(o.id)} rejected</span>` : ''}`, 'num')}
         ${td('Available', `<span class="strong">${avail}</span>`, 'num')}
         ${td('Progress', progress(poured, num(job.molds_required)))}
         ${td('Status', `${avail ? pill('Ready to Pour', 'ReadyforPouring') : pill('All Poured', 'Poured')}<span class="sub">Molding: ${esc(job.status)}</span>`)}
@@ -1264,16 +1264,17 @@
 
     function heatActions(b) {
       const next = HEAT_FLOW[HEAT_FLOW.indexOf(b.status) + 1];
-      return `<div class="actions" onclick="event.stopPropagation()">${b.status === 'Hold' ? actBtn('success', 'play', 'Resume', `setHeatStatus('${b.id}','Melting')`) : next ? actBtn('secondary', 'chevron', `Mark ${next}`, `setHeatStatus('${b.id}','${next}')`) : ''}${actBtn('ghost', 'edit', 'Edit heat', `openMeltingForm('','${b.id}')`, true)}</div>`;
+      return `<div class="actions" onclick="event.stopPropagation()">${b.status === 'Hold' ? actBtn('success', 'play', 'Resume', `setHeatStatus('${b.id}','Melting')`) : next ? actBtn('secondary', 'chevron', `Mark ${next}`, `setHeatStatus('${b.id}','${next}')`) : ''}${b.status === 'Poured' ? actBtn('danger', 'close', `Rejection${num(b.molds_rejected) || sumRej(b.id) ? ` (${sumRej(b.id)})` : ''}`, `openRejectForm('${b.id}')`) : ''}${actBtn('ghost', 'edit', 'Edit heat', `openMeltingForm('','${b.id}')`, true)}</div>`;
     }
+    function sumRej(batchId) { return heatLines(batchId).reduce((s, l) => s + num(l.molds_rejected), 0); }
     function yieldOf(b) { return num(b.melt_qty_kg) > 0 ? `${Math.round(num(b.pour_qty_kg) / num(b.melt_qty_kg) * 100)}%` : '—'; }
 
     function heatsTable(list, emptyMsg, withOrder = true) {
       return dataTable(
-        [['Heat No', ''], ...(withOrder ? [['Order', '']] : []), ['Date', ''], ['Furnace', ''], ['Operator', ''], ['Molds', 'num'], ['Melt kg', 'num'], ['Pour kg', 'num'], ['Yield', 'num'], ['Status', ''], ['Actions', 'act']],
+        [['Heat No', ''], ...(withOrder ? [['Order', '']] : []), ['Date', ''], ['Furnace', ''], ['Operator', ''], ['Molds', 'num'], ['Rejected', 'num'], ['Melt kg', 'num'], ['Pour kg', 'num'], ['Yield', 'num'], ['Status', ''], ['Actions', 'act']],
         list.map(b => {
           const lines = heatLines(b.id);
-          const orderIds = lines.map(l => `<span class="mono">${esc(orderById(l.order_uuid)?.order_id || '—')}</span>${lines.length > 1 ? ` <small style="color:var(--muted);white-space:nowrap">× ${num(l.molds_poured)} molds</small>` : ''}`).join('<br>') || '—';
+          const orderIds = lines.map(l => `<span class="mono">${esc(orderById(l.order_uuid)?.order_id || '—')}</span>${lines.length > 1 ? ` <small style="color:var(--muted);white-space:nowrap">× ${num(l.molds_poured)} molds${num(l.molds_rejected) ? `, ${num(l.molds_rejected)} rej` : ''}</small>` : ''}`).join('<br>') || '—';
           return `<tr class="click" onclick="showHeats('${heatFirstOrder(b)}')">
             ${td('Heat No', `<span class="mono">${esc(b.heat_no)}</span>${lines.length > 1 ? `<span class="sub">${lines.length} orders</span>` : ''}`, 'lead nowrap')}
             ${withOrder ? td('Order', orderIds) : ''}
@@ -1281,6 +1282,7 @@
             ${td('Furnace', esc(b.furnace_no || '—'))}
             ${td('Operator', esc(b.operator_name || '—'))}
             ${td('Molds', `<span class="strong">${num(b.molds_poured)}</span>`, 'num')}
+            ${td('Rejected', sumRej(b.id) ? `<span class="late">${sumRej(b.id)}</span>` : 0, 'num')}
             ${td('Melt kg', fmt(b.melt_qty_kg), 'num')}
             ${td('Pour kg', fmt(b.pour_qty_kg), 'num')}
             ${td('Yield', yieldOf(b), 'num')}
@@ -1294,7 +1296,7 @@
       const usage = meltUsage(b.id);
       return `<div class="hist"><div class="hist-top"><span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="mono">${esc(b.heat_no)}</span>${pill(b.status)}</span>${heatActions(b)}</div>
         <div class="row-meta">${moneyDate(b.melting_date)} · Furnace ${esc(b.furnace_no || '—')} · ${esc(b.operator_name || 'Operator not set')}<br>Molds poured <b>${num(b.molds_poured)}</b> · Melt <b>${fmt(b.melt_qty_kg)} kg</b> · Pour <b>${fmt(b.pour_qty_kg)} kg</b> · Yield <b>${yieldOf(b)}</b></div>
-        <div class="row-meta"><b>Orders in this heat</b></div><div class="chips">${heatLines(b.id).map(l => { const o = orderById(l.order_uuid) || {}; return `<span class="chip">${esc(o.order_id || '—')} · ${esc(o.model_name || '')}: <b>${num(l.molds_poured)}</b> molds</span>`; }).join('') || '<span class="hint">No orders</span>'}</div>
+        <div class="row-meta"><b>Orders in this heat</b></div><div class="chips">${heatLines(b.id).map(l => { const o = orderById(l.order_uuid) || {}; return `<span class="chip">${esc(o.order_id || '—')} · ${esc(o.model_name || '')}: <b>${num(l.molds_poured)}</b> molds${num(l.molds_rejected) ? ` · <span class="late">${num(l.molds_rejected)} rejected</span>${l.rejection_reason ? ` (${esc(l.rejection_reason)})` : ''}` : ''}</span>`; }).join('') || '<span class="hint">No orders</span>'}</div>
         <div class="row-meta"><b>Raw material</b>${heatLines(b.id).length > 1 ? ' <span class="hint">(whole heat, shared by all orders above)</span>' : ''}</div>${usageChips(usage.filter(u => u.type === 'Raw Material'))}
         <div class="row-meta"><b>Melting &amp; pouring consumables</b></div>${usageChips(usage.filter(u => u.type === 'Consumable'))}</div>`;
     }
@@ -1305,7 +1307,7 @@
       const heats = batchesFor(orderId).sort((a, b) => b.created_at.localeCompare(a.created_at));
       const all = heats.flatMap(b => meltUsage(b.id));
       modal(`Heats · ${esc(o.order_id)}`, `
-        ${summary([['Molds made', num(job?.molds_made)], ['Poured', pouredFor(orderId)], ['Available', availableMolds(orderId)], ['Heats', heats.length]])}
+        ${summary([['Molds made', num(job?.molds_made)], ['Poured', pouredFor(orderId)], ['Rejected', castRejected(orderId)], ['Good castings', pouredGood(orderId)], ['Available', availableMolds(orderId)], ['Heats', heats.length]])}
         <div class="section-label">Total raw material</div>${usageTable(totalsByItem(all.filter(u => u.type === 'Raw Material')), 'No raw material recorded.')}
         <div class="section-label">Total melting &amp; pouring consumables</div>${usageTable(totalsByItem(all.filter(u => u.type === 'Consumable')), 'No consumables recorded.')}
         <div class="section-label">Heats (${heats.length})</div>
@@ -1457,6 +1459,47 @@
       } catch (error) { toast(error.message, true); }
     }
 
+    const CAST_DEFECTS = ['Blow Holes', 'Shrinkage', 'Cold Shut', 'Misrun', 'Crack', 'Sand Inclusion', 'Slag Inclusion', 'Mismatch', 'Porosity', 'Dimension Issue', 'Other'];
+    function openRejectForm(batchId) {
+      const b = batchById(batchId);
+      if (!state.multiHeat) return toast('Run supabase_multi_order_heat_v6.sql and supabase_casting_rejection_v7.sql in Supabase first', true);
+      const lines = heatLines(batchId);
+      modal(`Casting Rejection · ${esc(b.heat_no)}`, `<form class="form-grid" onsubmit="saveRejection(event,'${batchId}')">
+        <div class="field full"><div class="hint">Enter how many poured castings of each order came out bad in this heat. Only good castings (poured − rejected) go to Heat Treatment.</div></div>
+        ${lines.map(l => {
+          const o = orderById(l.order_uuid) || {};
+          const reason = l.rejection_reason || '';
+          return `<div class="field full" data-line="${l.id}"><div class="ctx" style="margin-bottom:8px">${thumb(o.product_image_url, o.model_name)}<div><b>${esc(o.order_id || '—')} · ${esc(o.model_name || '')}</b><small>Poured in this heat: <span style="font-weight:700;color:var(--ink)">${num(l.molds_poured)}</span>${o.grade ? ` · ${esc(o.grade)}` : ''}</small></div></div>
+            <div class="line" style="grid-template-columns:120px 1fr 1fr">
+              <input type="number" min="0" max="${num(l.molds_poured)}" step="1" placeholder="Rejected" value="${num(l.molds_rejected) || ''}" data-max="${num(l.molds_poured)}" data-order="${esc(o.order_id || '')}" class="rej-qty">
+              <select class="rej-reason"><option value="">Reason / defect</option>${CAST_DEFECTS.map(d => `<option ${d === reason ? 'selected' : ''}>${d}</option>`).join('')}${reason && !CAST_DEFECTS.includes(reason) ? `<option selected>${esc(reason)}</option>` : ''}</select>
+              <input type="text" class="rej-remarks" placeholder="Remarks (optional)" value="${esc(l.rejection_remarks || '')}">
+            </div></div>`;
+        }).join('')}
+        ${formActions('Save Rejection')}</form>`);
+    }
+    async function saveRejection(event, batchId) {
+      event.preventDefault();
+      const updates = [];
+      for (const wrap of document.querySelectorAll('[data-line]')) {
+        const qtyEl = wrap.querySelector('.rej-qty');
+        const qty = num(qtyEl.value);
+        const max = num(qtyEl.dataset.max);
+        const reason = wrap.querySelector('.rej-reason').value;
+        if (!Number.isInteger(qty) || qty < 0) return toast(`${qtyEl.dataset.order}: enter whole pieces`, true);
+        if (qty > max) return toast(`${qtyEl.dataset.order}: only ${max} castings were poured in this heat`, true);
+        if (qty > 0 && !reason) return toast(`${qtyEl.dataset.order}: select a rejection reason`, true);
+        updates.push({ id: wrap.dataset.line, body: { molds_rejected: qty, rejection_reason: qty ? reason : null, rejection_remarks: qty ? (wrap.querySelector('.rej-remarks').value.trim() || null) : null } });
+      }
+      try {
+        for (const u of updates) await request(`melting_batch_orders?id=eq.${u.id}`, { method: 'PATCH', body: JSON.stringify(u.body) });
+        closeModal();
+        await refreshAll();
+        const total = updates.reduce((s, u) => s + u.body.molds_rejected, 0);
+        toast(`${batchById(batchId)?.heat_no || 'Heat'}: ${total} casting${total === 1 ? '' : 's'} rejected`);
+      } catch (error) { toast(error.message, true); }
+    }
+
     async function setHeatStatus(id, status) {
       const b = state.melting_batches.find(x => x.id === id);
       if (status === 'Poured' && sum(heatLines(id), l => l.molds_poured) <= 0) return openMeltingForm('', id);
@@ -1470,7 +1513,7 @@
 
     async function deleteHeat(id, orderId) {
       const hb = state.melting_batches.find(x => x.id === id);
-      const blocked = heatLines(id).find(l => pouredDone(l.order_uuid) - num(l.molds_poured) < htLoaded(l.order_uuid));
+      const blocked = heatLines(id).find(l => pouredGood(l.order_uuid) - (num(l.molds_poured) - num(l.molds_rejected)) < htLoaded(l.order_uuid));
       if (state.flowReady && hb?.status === 'Poured' && blocked) return toast(`Cannot delete: castings of ${orderById(blocked.order_uuid)?.order_id || 'an order'} from this heat are already in Heat Treatment`, true);
       orderId = orderId || heatFirstOrder(hb || {});
       if (!confirm('Delete this heat? Its molds will become available again.')) return;
@@ -1491,11 +1534,14 @@
 
     /* ---- quantities per order (1 mold = 1 casting) ---- */
     function pouredDone(oid) { return sum(heatOrderLines(oid).filter(l => batchById(l.melting_batch_id)?.status === 'Poured'), l => l.molds_poured); }
+    /* casting rejection after pouring: only good castings (poured - rejected) go to Heat Treatment */
+    function castRejected(oid) { return sum(heatOrderLines(oid).filter(l => batchById(l.melting_batch_id)?.status === 'Poured'), l => l.molds_rejected); }
+    function pouredGood(oid) { return pouredDone(oid) - castRejected(oid); }
     function htItemsFor(oid) { return state.ht_items.filter(i => i.order_uuid === oid); }
     function htLoaded(oid) { return sum(htItemsFor(oid), i => i.qty); }
     function htDone(oid) { return sum(htItemsFor(oid).filter(i => i.time_out), i => i.qty); }
     function htInFurnace(oid) { return htLoaded(oid) - htDone(oid); }
-    function htWaiting(oid) { return Math.max(pouredDone(oid) - htLoaded(oid), 0); }
+    function htWaiting(oid) { return Math.max(pouredGood(oid) - htLoaded(oid), 0); }
     function fettleFor(oid) { return state.fettling_entries.filter(e => e.order_uuid === oid); }
     function fettledOk(oid) { return sum(fettleFor(oid), e => e.qty_ok); }
     function fettledRej(oid) { return sum(fettleFor(oid), e => e.qty_rejected); }
@@ -1991,7 +2037,7 @@
       const tab = state.filter.stock;
       const orders = state.orders.filter(FLOW_ORDER);
       const inStock = orders.filter(o => stockQty(o.id) > 0);
-      const wip = sum(orders, o => Math.max(pouredDone(o.id) - fettledOk(o.id) - fettledRej(o.id), 0));
+      const wip = sum(orders, o => Math.max(pouredGood(o.id) - fettledOk(o.id) - fettledRej(o.id), 0));
       const byProduct = {};
       orders.filter(o => fettledOk(o.id) > 0).forEach(o => {
         const k = o.product_id || o.model_id;
@@ -2019,7 +2065,7 @@
               ${td('In Furnace', htInFurnace(o.id), 'num')}
               ${td('Fettling', fettleWaiting(o.id), 'num')}
               ${td('Finished', fettledOk(o.id), 'num')}
-              ${td('Rejected', fettledRej(o.id), 'num')}
+              ${td('Rejected', castRejected(o.id) + fettledRej(o.id) ? `<span class="late">${castRejected(o.id) + fettledRej(o.id)}</span><span class="sub">cast ${castRejected(o.id)} · fettling ${fettledRej(o.id)}</span>` : 0, 'num')}
               ${td('Dispatched', dispatchedQty(o.id), 'num')}
               ${td('Stage', stageOf(o))}
             </tr>`), 'No open orders.'));
@@ -2042,7 +2088,7 @@
       document.getElementById('stock').innerHTML =
         header('Stock Inventory', 'Ready finished products — added from Fettling, reduced by Dispatch') +
         statCards([['In Stock (pcs)', sum(inStock, o => stockQty(o.id)), 'stock', 'green'], ['Orders with Stock', inStock.length, 'orders', 'orange'], ['Products in Stock', Object.values(byProduct).filter(r => r.stock > 0).length, 'products', 'blue'],
-          ['Work in Progress (pcs)', wip, 'melting', 'amber'], ['Dispatched (pcs)', sum(state.dispatches, d => d.qty), 'dispatch', 'teal'], ['Rejected (pcs)', sum(state.fettling_entries, e => e.qty_rejected), 'close', 'red']]) +
+          ['Work in Progress (pcs)', wip, 'melting', 'amber'], ['Dispatched (pcs)', sum(state.dispatches, d => d.qty), 'dispatch', 'teal'], ['Rejected (pcs)', sum(state.fettling_entries, e => e.qty_rejected) + sum(state.orders, o => castRejected(o.id)), 'close', 'red']]) +
         `<div style="margin-bottom:14px">${tabs('stock', ['By Order', 'By Product', 'Pipeline'], 'renderStock')}</div>` + body;
     }
 
