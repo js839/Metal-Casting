@@ -452,10 +452,10 @@
       ['dispatch', 'Dispatch', 'Dispatch', 'Stock & Dispatch']
     ];
     const bottomNavIds = ['dashboard', 'orders', 'melting', 'heat', 'dispatch'];
-    const rawCategories = ['Scrap Input', 'FE Alloy & Metal Input'];
+    const rawCategories = ['Scrap Input', 'FE Alloy & Metal Input', 'Electricity'];
     const consumableCategories = ['Melting & Pouring Consumable', 'Molding & Molding Consumable', 'Heat Treatment Consumable', 'Fettling & Finishing Consumable'];
     const CONSUMABLE_KIND = { mold: 'Molding & Molding Consumable', meltcon: 'Melting & Pouring Consumable', ht: 'Heat Treatment Consumable', fettle: 'Fettling & Finishing Consumable' };
-    const units = ['KG', 'Ton', 'Gram', 'Litre', 'Pcs', 'Box'];
+    const units = ['KG', 'Ton', 'Gram', 'Litre', 'Pcs', 'Box', 'Unit'];
     const orderStatuses = ['Pending', 'In Production', 'Completed', 'Delivered', 'Cancelled'];
     const state = { page: 'dashboard', history: [], loading: true, products: [], raw_materials: [], consumables: [], orders: [], search: {}, filter: { orderStatus: 'All', molding: 'All', melting: 'Ready to Pour', heat: 'In Furnace', fettling: 'Waiting', stock: 'By Order' }, molding_jobs: [], molding_entries: [], molding_usage: [], melting_batches: [], melting_usage: [], productionReady: false, productionError: '', ht_batches: [], ht_items: [], ht_usage: [], fettling_entries: [], fettling_usage: [], dispatches: [], flowReady: false, flowError: '', selectedRawCategory: null, selectedConsumableCategory: null };
 
