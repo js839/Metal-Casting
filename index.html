@@ -455,6 +455,7 @@
     const rawCategories = ['Scrap Input', 'FE Alloy & Metal Input', 'Electricity'];
     const consumableCategories = ['Melting & Pouring Consumable', 'Molding & Molding Consumable', 'Heat Treatment Consumable', 'Fettling & Finishing Consumable'];
     const CONSUMABLE_KIND = { mold: 'Molding & Molding Consumable', meltcon: 'Melting & Pouring Consumable', ht: 'Heat Treatment Consumable', fettle: 'Fettling & Finishing Consumable' };
+    const GRADES = ['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6', 'Grade 7'];
     const units = ['KG', 'Ton', 'Gram', 'Litre', 'Pcs', 'Box', 'Unit'];
     const orderStatuses = ['Pending', 'In Production', 'Completed', 'Delivered', 'Cancelled'];
     const state = { page: 'dashboard', history: [], loading: true, products: [], raw_materials: [], consumables: [], orders: [], search: {}, filter: { orderStatus: 'All', molding: 'All', melting: 'Ready to Pour', heat: 'In Furnace', fettling: 'Waiting', stock: 'By Order' }, molding_jobs: [], molding_entries: [], molding_usage: [], melting_batches: [], melting_usage: [], productionReady: false, productionError: '', ht_batches: [], ht_items: [], ht_usage: [], fettling_entries: [], fettling_usage: [], dispatches: [], flowReady: false, flowError: '', selectedRawCategory: null, selectedConsumableCategory: null };
@@ -747,7 +748,7 @@
         [['Order ID', ''], ['Product', ''], ['Customer', ''], ['Qty', 'num'], ['Order Date', ''], ['Delivery', ''], ['Status', ''], ['Actions', 'act']],
         list.map(o => `<tr class="click" onclick="showOrderDetail('${o.id}')">
           ${td('Order ID', `<span class="mono">${esc(o.order_id || 'New Order')}</span>`, 'lead nowrap')}
-          ${td('Product', prodCell(o.product_image_url, o.model_name, o.model_id))}
+          ${td('Product', prodCell(o.product_image_url, o.model_name, o.model_id) + (o.grade ? `<span class="chip" style="margin-top:4px;display:inline-block">${esc(o.grade)}</span>` : ''))}
           ${td('Customer', `<span class="strong">${esc(o.customer_name)}</span>${o.customer_mobile ? `<span class="sub">${esc(o.customer_mobile)}</span>` : ''}`)}
           ${td('Qty', `<span class="strong">${esc(o.quantity)}</span>`, 'num')}
           ${td('Order Date', moneyDate(o.order_date), 'nowrap')}
@@ -885,10 +886,21 @@
         ${field('order_date', 'Order Date', o.order_date || today(), 'date', true)}
         ${field('delivery_date', 'Delivery Date', o.delivery_date, 'date')}
         ${field('quantity', 'Quantity', o.quantity || 1, 'number', true)}
+        ${gradeFields(o.grade)}
         ${selectField('status', 'Order Status', o.status || 'Pending', orderStatuses)}
         ${field('remarks', 'Remarks', o.remarks, 'textarea')}
         ${formActions(id ? 'Update Order' : 'Submit Order')}</form>`);
       syncProductFields();
+    }
+    function gradeFields(current) {
+      const isCustom = !!current && !GRADES.includes(current);
+      const sel = isCustom ? 'Custom' : (current || '');
+      return `<div class="field" data-field="grade_select"><label for="grade_select">Grade</label><select id="grade_select" onchange="toggleCustomGrade()"><option value="">Select grade</option>${[...GRADES, 'Custom'].map(g => `<option value="${g}" ${sel === g ? 'selected' : ''}>${g}</option>`).join('')}</select><div class="error">Grade is required</div></div>
+        <div class="field" data-field="grade_custom" id="gradeCustomWrap" style="${isCustom ? '' : 'display:none'}"><label for="grade_custom">Custom Grade <span class="req">*</span></label><input id="grade_custom" type="text" placeholder="Enter custom grade" value="${isCustom ? esc(current) : ''}"><div class="error">Custom Grade is required</div></div>`;
+    }
+    function toggleCustomGrade() {
+      const wrap = document.getElementById('gradeCustomWrap');
+      if (wrap) wrap.style.display = val('grade_select') === 'Custom' ? '' : 'none';
     }
     function syncProductFields() {
       const p = state.products.find(x => x.id === val('product_id'));
@@ -899,9 +911,10 @@
     }
     async function saveOrder(event, id) {
       event.preventDefault();
-      if (!validate(['product_id', 'model_id_auto', 'customer_name', 'order_date', 'quantity'])) return;
+      if (!validate(['product_id', 'model_id_auto', 'customer_name', 'order_date', 'quantity', ...(val('grade_select') === 'Custom' ? ['grade_custom'] : [])])) return;
+      const grade = val('grade_select') === 'Custom' ? val('grade_custom') : (val('grade_select') || null);
       const p = state.products.find(x => x.id === val('product_id'));
-      const payload = { product_id: p.id, model_name: p.product_name, model_id: p.model_id, product_image_url: p.image_url, customer_name: val('customer_name'), customer_mobile: val('customer_mobile'), order_date: val('order_date'), delivery_date: val('delivery_date') || null, quantity: Number(val('quantity')), remarks: val('remarks'), status: val('status') || 'Pending' };
+      const payload = { product_id: p.id, model_name: p.product_name, model_id: p.model_id, product_image_url: p.image_url, customer_name: val('customer_name'), customer_mobile: val('customer_mobile'), order_date: val('order_date'), delivery_date: val('delivery_date') || null, quantity: Number(val('quantity')), grade, remarks: val('remarks'), status: val('status') || 'Pending' };
       await save('orders', id, payload, 'Order saved');
     }
 
@@ -953,7 +966,7 @@
     }
     function showOrderDetail(id) {
       const o = state.orders.find(x => x.id === id);
-      details(`Order ${esc(o.order_id || '')}`, [['Order ID', `<span class="mono">${esc(o.order_id)}</span>`], ['Model Name', esc(o.model_name)], ['Model ID', `<span class="mono">${esc(o.model_id)}</span>`], ['Customer', esc(o.customer_name)], ['Mobile', esc(o.customer_mobile || '—')], ['Quantity', esc(o.quantity)], ['Order Date', moneyDate(o.order_date)], ['Delivery Date', dueDate(o)], ['Status', pill(o.status)], ['Molds Made', state.productionReady ? `${num(jobFor(o.id)?.molds_made)} / ${num(jobFor(o.id)?.molds_required ?? o.quantity)}` : '—'], ['Molds Poured', state.productionReady ? String(pouredFor(o.id)) : '—'], ...(state.flowReady ? [['Heat Treated', `${htDone(o.id)} pcs${htLoaded(o.id) - htDone(o.id) ? ` <span class="sub">${htLoaded(o.id) - htDone(o.id)} in furnace</span>` : ''}`], ['Finished (OK / Rejected)', `${fettledOk(o.id)} / ${fettledRej(o.id)}`], ['Dispatched', `${dispatchedQty(o.id)} of ${esc(o.quantity)}`], ['In Stock', String(stockQty(o.id))]] : []), ['Remarks', esc(o.remarks || '—')]],
+      details(`Order ${esc(o.order_id || '')}`, [['Order ID', `<span class="mono">${esc(o.order_id)}</span>`], ['Model Name', esc(o.model_name)], ['Model ID', `<span class="mono">${esc(o.model_id)}</span>`], ['Customer', esc(o.customer_name)], ['Mobile', esc(o.customer_mobile || '—')], ['Grade', esc(o.grade || '—')], ['Quantity', esc(o.quantity)], ['Order Date', moneyDate(o.order_date)], ['Delivery Date', dueDate(o)], ['Status', pill(o.status)], ['Molds Made', state.productionReady ? `${num(jobFor(o.id)?.molds_made)} / ${num(jobFor(o.id)?.molds_required ?? o.quantity)}` : '—'], ['Molds Poured', state.productionReady ? String(pouredFor(o.id)) : '—'], ...(state.flowReady ? [['Heat Treated', `${htDone(o.id)} pcs${htLoaded(o.id) - htDone(o.id) ? ` <span class="sub">${htLoaded(o.id) - htDone(o.id)} in furnace</span>` : ''}`], ['Finished (OK / Rejected)', `${fettledOk(o.id)} / ${fettledRej(o.id)}`], ['Dispatched', `${dispatchedQty(o.id)} of ${esc(o.quantity)}`], ['In Stock', String(stockQty(o.id))]] : []), ['Remarks', esc(o.remarks || '—')]],
         `<button class="btn danger" onclick="save('orders','${id}',{status:'Cancelled'},'Order cancelled')">${icon('close', 'sm')}<span>Cancel Order</span></button><button class="btn secondary" onclick="openStatusForm('${id}')">${icon('status', 'sm')}<span>Update Status</span></button><button class="btn primary" onclick="openOrderForm('${id}')">${icon('edit', 'sm')}<span>Edit Order</span></button>`,
         detailTop(o.product_image_url, o.model_name, `${esc(o.model_id)} · ${esc(o.customer_name)} · Qty ${esc(o.quantity)}`, pill(o.status)));
     }
